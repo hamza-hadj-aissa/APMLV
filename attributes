@@ -1,0 +1,52 @@
+# Display logical volumes
+lvs -o lv_uuid,lv_name,lv_size,lv_full_name,lv_tags,lv_role,seg_count,vg_name --units k --reportformat json
+------------------------------------------------------------------------------------------------------
+lv_uuid                     - Unique identifier.
+lv_name                     - Name.  LVs created for internal use are enclosed in brackets.
+lv_size                     - Size of LV in current units. [size]
+lv_full_name                - Full name of LV including its VG, namely VG/LV.
+lv_tags                     - Tags, if any. [string list]
+lv_role                     - LV role. [string list]
+seg_count                   - Number of segments in LV. [number]
+vg_name                     - Volume group name
+------------------------------------------------------------------------------------------------------
+
+
+
+# Display logical volumes filesystems
+lsblk /dev/volume-group/lg* -o NAME,FSTYPE --json
+------------------------------------------------------------------------------------------------------
+NAME                        - device name
+FSTYPE                      - filesystem type
+------------------------------------------------------------------------------------------------------
+
+
+# Display Volume groups
+vgs -o vg_uuid,vg_name,vg_size,vg_free,vg_tags,lv_count,pv_count,vg_permissions,pv_name --units k --reportformat json
+------------------------------------------------------------------------------------------------------
+vg_uuid                     - Unique identifier.
+vg_name                     - Name.
+vg_size                     - Total size of VG in current units.
+vg_free                     - Total amount of free space in current units.
+vg_tags                     - Tags, if any.
+lv_count                    - Number of LVs.
+pv_count                    - Number of PVs in VG.
+vg_permissions              - VG permissions.
+pv_name                     - PV Name
+------------------------------------------------------------------------------------------------------
+
+
+
+# Display Physical volumes
+pvs -o pv_uuid,pv_name,pv_size,pv_free,pv_used,pv_allocatable,dev_size,pv_missing,pv_tags --units k --reportformat json
+------------------------------------------------------------------------------------------------------
+pv_uuid                     - Unique identifier.
+pv_name                     - Name.
+pv_size                     - Size of PV in current units.
+pv_free                     - Total amount of unallocated space in current units.
+pv_used                     - Total amount of allocated space in current units.
+pv_allocatable              - Set if this device can be used for allocation.
+dev_size                    - Size of underlying device in current units.
+pv_missing                  - Set if this device is missing in system.
+pv_tags                     - Tags, if any.
+------------------------------------------------------------------------------------------------------
