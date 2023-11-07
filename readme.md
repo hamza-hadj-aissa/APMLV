@@ -13,7 +13,7 @@ git clone https://github.com/hamza-hadj-aissa/lvm_balancer.git
 
 **2** - Set Up a Virtual Environment
 ```
-python -m venv Environment
+python -m venv env
 ```
 
 **3** - Install required libraries
