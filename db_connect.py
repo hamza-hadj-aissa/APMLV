@@ -19,3 +19,5 @@ engine = create_engine(
 if not database_exists(engine.url):
     print("Creating database {}".format(DB_NAME))
     create_database(engine.url)
+
+print("Database connected")
