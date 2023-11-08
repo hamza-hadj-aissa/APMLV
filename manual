@@ -1,2 +1,0 @@
-# output every info about every volume in the system
-# lsblk -O -J > path/to/output_file 2> path/to/error_file
