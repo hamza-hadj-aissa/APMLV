@@ -69,7 +69,8 @@ if __name__ == "__main__":
         volume_name = f"Volume_{counter + 1}"
         counter = counter + 1
         volume_history = generate_usage_history(
-            volume_id, volume_name, disk_capacity, 7*24)
+            volume_id, volume_name, disk_capacity, 24*365*5)
         dataset.extend(volume_history)
 
-    write_to_csv(dataset, "dataset/logical_volume_usage_history.csv")
+    write_to_csv(
+        dataset, "./data_generation/dataset/logical_volume_usage_history.csv")
