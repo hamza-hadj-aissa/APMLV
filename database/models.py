@@ -19,7 +19,7 @@ class Group_volume(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     physical_volumes: Mapped[List["Physical_volume"]
-                             ] = relationship("Physical_volume", back_populates="Group_volume")
+                             ] = relationship("Physical_volume", back_populates="group_volume")
 
 
 class Lv_change_enum(enum.Enum):
@@ -61,9 +61,9 @@ class Logical_volume(Base):
                                                  nullable=False, default=func.now())
 
     lv_changes: Mapped[List["Lv_change"]] = relationship("Lv_change",
-                                                         back_populates="Logical_volume")
+                                                         back_populates="logical_volume")
     segments: Mapped[List["Segment"]
-                     ] = relationship("Segment", back_populates="Logical_volume")
+                     ] = relationship("Segment", back_populates="logical_volume")
 
 
 class Segment(Base):
@@ -80,9 +80,9 @@ class Segment(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     physical_volume: Mapped["Physical_volume"] = relationship(
-        back_populates="Segment")
+        "Physical_volume", back_populates="segment")
     logical_volume: Mapped["Logical_volume"] = relationship(
-        back_populates="Segment")
+        "Logical_volume", back_populates="segment")
 
 
 class Physical_volume(Base):
@@ -102,4 +102,4 @@ class Physical_volume(Base):
     group_volume: Mapped["Group_volume"] = relationship(
         back_populates="Physical_volume")
     segments: Mapped[List["Segment"]
-                     ] = relationship(back_populates="Physical_volume")
+                     ] = relationship(back_populates="physical_volume")

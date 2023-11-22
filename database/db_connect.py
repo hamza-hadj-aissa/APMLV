@@ -1,7 +1,8 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, table
 from sqlalchemy_utils import create_database, database_exists
 import os
 from dotenv import load_dotenv
+from models import Base
 
 
 # load .env variables
@@ -21,3 +22,7 @@ if not database_exists(engine.url):
     create_database(engine.url)
 
 print("Database connected")
+
+
+print("Creating database tables")
+Base.metadata.create_all(bind=engine)
