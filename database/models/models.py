@@ -2,6 +2,7 @@ from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy import String, Float, ForeignKey, DateTime, func, Enum
 import enum
 from typing import List
+from sqlalchemy.orm import Session
 
 
 class Base(DeclarativeBase):
@@ -33,12 +34,24 @@ class VolumeGroupInfo(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
 
-    # Foreign keys
-    volume_group_id_fk: Mapped[int] = mapped_column(ForeignKey(
-        "volume_group.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     volume_group: Mapped[List["VolumeGroup"]
                          ] = relationship("VolumeGroup", back_populates="info")
+
+    # classMethods
+    def get_or_create(cls, session: Session, vg_name: str) -> "VolumeGroupInfo":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(vg_name=vg_name).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(vg_name=vg_name)
+            session.add(new_row)
+            session.commit()  # Commit the new row to the database
+            return new_row
 
 
 class VolumeGroup(Base):
@@ -49,13 +62,31 @@ class VolumeGroup(Base):
     vg_uuid: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
+    # Foreign keys
+    volume_group_info_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "volume_group_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     info: Mapped["VolumeGroupInfo"] = relationship(
-        "VolumeGroupStats", back_populates="volume_group")
+        "VolumeGroupInfo", back_populates="volume_group")
     stats: Mapped["VolumeGroupStats"] = relationship(
         "VolumeGroupStats", back_populates="volume_group")
     physical_volumes: Mapped[List["PhysicalVolume"]
                              ] = relationship("PhysicalVolume", back_populates="volume_group")
+
+    # classMethods
+    def get_or_create(cls, session: Session, vg_uuid: str) -> "VolumeGroup":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(vg_uuid=vg_uuid).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(vg_uuid=vg_uuid)
+            session.add(new_row)
+            session.commit()  # Commit the new row to the database
+            return new_row
 
 
 class PhysicalVolumeStats(Base):
@@ -79,16 +110,27 @@ class PhysicalVolumeInfo(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     pv_name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False)
+        String(255), nullable=False, unique=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
-
-    # Foreign keys
-    physical_volume_id_fk: Mapped[int] = mapped_column(ForeignKey(
-        "physical_volume.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     physical_volume: Mapped[List["PhysicalVolume"]
                             ] = relationship("PhysicalVolume", back_populates="info")
+
+    # classMethods
+    def get_or_create(cls, session: Session, pv_name: str) -> "PhysicalVolumeInfo":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(pv_name=pv_name).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(pv_name=pv_name)
+            session.add(new_row)
+            session.commit()  # Commit the new row to the database
+            return new_row
 
 
 class PhysicalVolume(Base):
@@ -101,18 +143,35 @@ class PhysicalVolume(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
-    group_volume_id_fk: Mapped[int] = mapped_column(
+    volume_group_id_fk: Mapped[int] = mapped_column(
         ForeignKey("volume_group.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
-
+    # Foreign keys
+    physical_volume_info_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "physical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, unique=True)
     # Relationships
     info: Mapped["PhysicalVolumeInfo"] = relationship(
-        "PhysicalVolumeInfo", back_populates="physical_volumes")
+        "PhysicalVolumeInfo", back_populates="physical_volume")
     stats: Mapped["PhysicalVolumeStats"] = relationship(
-        "PhysicalVolumeStats", back_populates="physical_volumes")
+        "PhysicalVolumeStats", back_populates="physical_volume")
     volume_group: Mapped["VolumeGroup"] = relationship(
         "VolumeGroup", back_populates="physical_volumes")
     segments: Mapped[List["Segment"]
                      ] = relationship(back_populates="physical_volume")
+
+    # classMethods
+    def get_or_create(cls, session: Session, pv_uuid: str) -> "PhysicalVolume":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(pv_uuid=pv_uuid).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(pv_uuid=pv_uuid)
+            session.add(new_row)
+            session.commit()  # Commit the new row to the database
+            return new_row
 
 
 class SegmentStats(Base):
@@ -151,6 +210,23 @@ class Segment(Base):
     physical_volume: Mapped["PhysicalVolume"] = relationship(
         back_populates="segments")
 
+    # classMethods
+    def get_or_create(cls, session: Session, logical_volume_id_fk: int, physical_volume_id_fk: int) -> "Segment":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(
+            logical_volume_id_fk=logical_volume_id_fk, physical_volume_id_fk=physical_volume_id_fk).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(logical_volume_id_fk=logical_volume_id_fk,
+                          physical_volume_id_fk=physical_volume_id_fk)
+            session.add(new_row)
+            session.commit()  # Commit the new row to the database
+            return new_row
+
 
 class LogicalVolumeStats(Base):
     __tablename__ = "logical_volume_stats"
@@ -176,27 +252,40 @@ class LogicalVolumeInfo(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     lv_name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False)
+        String(255), nullable=False, unique=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
 
-    # Foreign keys
-    volume_group_id_fk: Mapped[int] = mapped_column(ForeignKey(
-        "logical_volume.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     logical_volume: Mapped[List["LogicalVolume"]
                            ] = relationship("LogicalVolume", back_populates="info")
+
+    # classMethods
+    def get_or_create(cls, session: Session, lv_name: str) -> "LogicalVolumeInfo":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(lv_name=lv_name).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(lv_name=lv_name)
+            session.add(new_row)
+            session.commit()  # Commit the new row to the database
+            return new_row
 
 
 class LogicalVolume(Base):
     __tablename__ = "logical_volume"
     # info
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    lv_name: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False)
     lv_uuid: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
+    # Foreign keys
+    logical_volume_info_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "logical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, unique=True)
     # Relationships
     info: Mapped["LogicalVolumeInfo"] = relationship(
         "LogicalVolumeInfo", back_populates="logical_volume")
@@ -206,6 +295,22 @@ class LogicalVolume(Base):
                        ] = relationship("LvChange", back_populates="logical_volume")
     segments: Mapped[List["Segment"]
                      ] = relationship("Segment", back_populates="logical_volume")
+
+    # classMethods
+    def get_or_create(cls, session: Session, lv_uuid: str) -> "LogicalVolume":
+        # Try to find an existing row based on the vg_uuid
+        existing_row = session.query(cls).filter_by(lv_uuid=lv_uuid).first()
+
+        if existing_row:
+            # If the row exists, return it
+            return existing_row
+        else:
+            # If the row doesn't exist, create a new one and return it
+            new_row = cls(lv_uuid=lv_uuid)
+            # session.add(new_row)
+            # session.add(new_row)
+            # session.commit()  # Commit the new row to the database
+            return new_row
 
 
 class LvChangeEnum(enum.Enum):
