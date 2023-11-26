@@ -11,7 +11,6 @@ SIZE_UNIT = "m"
 def parse_segment_ranges(df: pd.DataFrame):
     for index, lv in df.iterrows():
         le_ranges_array = lv["seg_le_ranges"][0].split(":")
-        print(le_ranges_array)
         pv_name = le_ranges_array[0]
         ranges_array = le_ranges_array[1].split("-")
         df.loc[index, "pv_name"] = pv_name
