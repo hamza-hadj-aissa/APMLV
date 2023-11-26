@@ -14,7 +14,7 @@ class VolumeGroupStats(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # stats
-    vg_size: Mapped[float] = mapped_column(nullable=False)
+    vg_size: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
@@ -94,7 +94,7 @@ class PhysicalVolumeStats(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # stats
-    pv_size: Mapped[float] = mapped_column(nullable=False)
+    pv_size: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
@@ -180,7 +180,7 @@ class SegmentStats(Base):
     # stats
     segment_range_start: Mapped[int] = mapped_column(nullable=False)
     segment_range_end: Mapped[int] = mapped_column(nullable=False)
-    segment_size: Mapped[float] = mapped_column(nullable=False)
+    segment_size: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
@@ -234,9 +234,9 @@ class LogicalVolumeStats(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # stats
     file_system_type: Mapped[str] = mapped_column(String(10), nullable=False)
-    file_system_size: Mapped[float] = mapped_column(nullable=False)
-    file_system_used_size: Mapped[float] = mapped_column(nullable=False)
-    file_system_available_size: Mapped[float] = mapped_column(nullable=False)
+    file_system_size: Mapped[int] = mapped_column(nullable=False)
+    file_system_used_size: Mapped[int] = mapped_column(nullable=False)
+    file_system_available_size: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
