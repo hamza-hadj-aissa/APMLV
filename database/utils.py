@@ -4,7 +4,6 @@ import math
 from numpy import double
 import pandas as pd
 from sqlalchemy.orm import Session
-from database.utils import get_volume_entity, insert_volume_entity
 from exceptions.InstanceNotFound import InstanceNotFound
 from database.models import (
     FileSystem,
