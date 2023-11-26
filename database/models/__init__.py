@@ -15,6 +15,7 @@ class VolumeGroupStats(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # stats
     vg_size: Mapped[int] = mapped_column(nullable=False)
+    vg_free: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys

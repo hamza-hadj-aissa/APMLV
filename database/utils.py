@@ -155,6 +155,7 @@ def insert_to_volume_group_stats(session: Session, vgs: pd.DataFrame):
             session, new_vg["vg_uuid"], new_vg["vg_name"])
         new_vg_stat = VolumeGroupStats(
             vg_size=new_vg["vg_size"],
+            vg_free=new_vg["vg_free"],
             # newely inserted vg id
             volume_group_id_fk=found_vg.id
         )
