@@ -6,7 +6,7 @@ from database.connect import connect_to_database
 from database.utils import insert_to_logical_volume_stats, insert_to_physical_volume_stats, insert_to_segment_stats, insert_to_volume_group_stats
 from sqlalchemy.orm import sessionmaker, Session
 import schedule
-
+from sqlalchemy.exc import SQLAlchemyError
 from exceptions.LvmCommandError import LvmCommandError
 
 # Set up logging configuration
@@ -25,20 +25,29 @@ def scrape_lvm_stats(session: Session):
         session, lvs_fs[["lv_uuid", "lv_name", "fstype", "fssize", "fsused", "fsavail"]])
     insert_to_segment_stats(
         session, lvs_fs[["seg_size", "segment_range_start", "segment_range_end", "pv_name", "lv_uuid"]])
+    session.close()
+
+
+def connect():
+    try:
+        # Connect to the database
+        database_engine = connect_to_database()
+        DBSession = sessionmaker(bind=database_engine)
+        session = DBSession()
+        return session
+    except SQLAlchemyError as e:
+        raise e
 
 
 if __name__ == "__main__":
-    # Connect to the database
-    database_engine = connect_to_database()
-    DBSession = sessionmaker(bind=database_engine)
-    session = DBSession()
-    schedule.every(5).seconds.do(scrape_lvm_stats, session=session)
     try:
+        session = connect()
+        schedule.every(5).seconds.do(scrape_lvm_stats, session=session)
         while True:
             schedule.run_pending()
     except KeyboardInterrupt:
         pass
     except LvmCommandError as e:
         logging.error(e)
-    finally:
-        session.close()
+    except SQLAlchemyError as e:
+        logging.warning(e)
