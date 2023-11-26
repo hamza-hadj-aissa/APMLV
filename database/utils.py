@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from database.models.models import LogicalVolume, LogicalVolumeInfo, PhysicalVolume, VolumeGroup, VolumeGroupInfo
+from database.models import LogicalVolume, LogicalVolumeInfo, PhysicalVolume, VolumeGroup, VolumeGroupInfo
 
 
 class DuplicateRowError(Exception):

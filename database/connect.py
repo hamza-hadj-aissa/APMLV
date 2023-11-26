@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy_utils import create_database, database_exists
 from dotenv import load_dotenv
 import os
-from database.models.models import Base
+from database.models import Base
 
 # Load .env variables
 load_dotenv()

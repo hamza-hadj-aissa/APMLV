@@ -4,10 +4,9 @@ import pandas as pd
 from sqlalchemy.orm import sessionmaker, Session
 from commands_utils import get_group_volumes, get_lv_lsblk, get_physical_volumes
 from database.connect import connect_to_database
-import database.models.models as models
 from database.utils import get_volume_entity, insert_volume_entity
 from exceptions.InstanceNotFound import InstanceNotFound
-from database.models.models import (
+from database.models import (
     LogicalVolumeStats,
     PhysicalVolumeStats,
     VolumeGroup,
@@ -94,7 +93,7 @@ def insert_or_get_segment(session: Session, pv_name, lv_uuid):
 def insert_to_volume_group_stats(session: Session, vgs: pd.DataFrame):
     for index, new_vg in vgs.iterrows():
         # find and get volume group instance
-        found_vg: models.VolumeGroup = insert_or_get_volume_group(
+        found_vg: VolumeGroup = insert_or_get_volume_group(
             session, new_vg["vg_uuid"], new_vg["vg_name"])
         new_vg_stat = VolumeGroupStats(
             vg_size=new_vg["vg_size"],
@@ -128,7 +127,7 @@ def insert_to_physical_volume_stats(session: Session, pvs: pd.DataFrame):
 def insert_to_logical_volume_stats(session: Session, lvs: pd.DataFrame):
     for _, new_lv in lvs.iterrows():
         # find and get logical volume instance
-        found_lv: models.LogicalVolume = insert_or_get_logical_volume(
+        found_lv: LogicalVolume = insert_or_get_logical_volume(
             session, new_lv["lv_uuid"], new_lv["lv_name"])
         new_lv_stat = LogicalVolumeStats(
             file_system_type=new_lv["fstype"],
