@@ -90,6 +90,7 @@ def insert_or_get_segment(session: Session, pv_name, lv_uuid):
     return found_segment
 
 
+# Helper function to get or insert filesystem type
 def insert_or_get_file_system(session: Session, file_system_type: str) -> FileSystem:
     file_system: FileSystem = session.query(FileSystem).filter_by(
         file_system_type=file_system_type).first()
