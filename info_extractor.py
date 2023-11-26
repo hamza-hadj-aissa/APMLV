@@ -25,7 +25,7 @@ from database.models.models import (
 # Helper function to get or insert a volume group
 def insert_or_get_volume_group(session: Session, vg_uuid, vg_name):
     found_vg = get_volume_entity(session, VolumeGroup, vg_uuid=vg_uuid)
-    if found_vg is None:
+    if found_vg is None or found_vg.info.vg_name != vg_name:
         found_vg = insert_volume_entity(
             session, VolumeGroup, VolumeGroupInfo, "vg_name", "vg_uuid", vg_name, vg_uuid)
         session.add(found_vg)
@@ -40,7 +40,7 @@ def insert_or_get_physical_volume(session: Session, pv_uuid, pv_name, vg_uuid):
         raise InstanceNotFound("Volume group not found")
 
     found_pv = get_volume_entity(session, PhysicalVolume, pv_uuid=pv_uuid)
-    if found_pv is None:
+    if found_pv is None or found_pv.info.pv_name != pv_name:
         found_pv = insert_volume_entity(
             session, PhysicalVolume, PhysicalVolumeInfo, "pv_name", "pv_uuid", pv_name, pv_uuid)
         found_pv.volume_group_id_fk = found_vg.id
@@ -52,7 +52,7 @@ def insert_or_get_physical_volume(session: Session, pv_uuid, pv_name, vg_uuid):
 # Helper function to get or insert a logical volume
 def insert_or_get_logical_volume(session: Session, lv_uuid, lv_name):
     found_lv = get_volume_entity(session, LogicalVolume, lv_uuid=lv_uuid)
-    if found_lv is None:
+    if found_lv is None or found_lv.info.lv_name != lv_name:
         found_lv = insert_volume_entity(
             session, LogicalVolume, LogicalVolumeInfo, "lv_name", "lv_uuid", lv_name, lv_uuid)
         session.add(found_lv)
@@ -89,9 +89,8 @@ def insert_or_get_segment(session: Session, pv_name, lv_uuid):
 
     return found_segment
 
+
 # Helper function to get or insert volume group stat
-
-
 def insert_to_volume_group_stats(session: Session, vgs: pd.DataFrame):
     for index, new_vg in vgs.iterrows():
         # find and get volume group instance
@@ -106,9 +105,8 @@ def insert_to_volume_group_stats(session: Session, vgs: pd.DataFrame):
         session.add(new_vg_stat)
         session.commit()
 
+
 # Helper function to get or insert physical volume stat
-
-
 def insert_to_physical_volume_stats(session: Session, pvs: pd.DataFrame):
     for _, new_pv in pvs.iterrows():
         # find and get physical volume instance
@@ -165,6 +163,7 @@ def start_extracting_data(session: Session):
     pvs = get_physical_volumes()
     vgs = get_group_volumes()
     lvs_fs = get_lv_lsblk()
+    print(lvs_fs)
     insert_to_volume_group_stats(
         session, vgs[["vg_uuid", "vg_name", "vg_size"]].drop_duplicates())
     insert_to_physical_volume_stats(
