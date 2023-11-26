@@ -7,6 +7,8 @@ from database.utils import insert_to_logical_volume_stats, insert_to_physical_vo
 from sqlalchemy.orm import sessionmaker, Session
 import schedule
 
+from exceptions.LvmCommandError import LvmCommandError
+
 # Set up logging configuration
 logging.basicConfig(level=logging.INFO)
 
@@ -36,5 +38,7 @@ if __name__ == "__main__":
             schedule.run_pending()
     except KeyboardInterrupt:
         pass
+    except LvmCommandError as e:
+        logging.error(e)
     finally:
         session.close()

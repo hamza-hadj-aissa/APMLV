@@ -6,6 +6,8 @@ import subprocess
 from numpy import double
 import pandas as pd
 
+from exceptions.LvmCommandError import LvmCommandError
+
 # output volumes size unit for pvs, vgs and lvs commands
 SIZE_UNIT = "m"
 
@@ -41,6 +43,19 @@ def run_command(command_array):
     logging.info(f"[{formatted_time}] - Scraping LVM statistics...")
     command_result = subprocess.run(
         command_array, capture_output=True, text=True)
-    if command_result.returncode == 0:
-        return json.loads(command_result.stdout.strip())
-    return None
+    try:
+        if command_result.returncode == 0:
+            return json.loads(command_result.stdout.strip())
+        else:
+            # mostly, it caused by permission access
+            raise LvmCommandError(
+                f"{command_array[1]} command not executed. Permission denied")
+    except subprocess.CalledProcessError as e:
+        # Handle Permission Denied error
+        print(f"Permission Denied: {e}")
+    except json.JSONDecodeError as e:
+        # Handle JSON decoding error
+        print(f"JSON Decoding Error: {e}")
+
+    # Return an empty dictionary if the command fails
+    return {}
