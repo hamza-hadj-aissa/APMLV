@@ -1,4 +1,6 @@
+import datetime
 import json
+import logging
 import math
 import subprocess
 from numpy import double
@@ -32,6 +34,11 @@ def convert_bytes_to_mib(bytes_size: int):
 
 
 def run_command(command_array):
+    # Get the current time
+    current_time = datetime.datetime.now()
+    # Format the current time (optional)
+    formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
+    logging.info(f"[{formatted_time}] - Scraping LVM statistics...")
     command_result = subprocess.run(
         command_array, capture_output=True, text=True)
     if command_result.returncode == 0:
