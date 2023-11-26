@@ -1,6 +1,6 @@
 import pandas as pd
 from commands.lvs import get_logical_volumes
-from commands import convert_bytes_to_mib, parse_size_number, run_command
+from commands.utils import convert_bytes_to_mib, parse_size_number, run_command
 
 
 def get_lv_lsblk():
