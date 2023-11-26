@@ -1,9 +1,7 @@
 import math
 from numpy import double
 import pandas as pd
-from sqlalchemy.orm import sessionmaker, Session
-from commands_utils import get_group_volumes, get_lv_lsblk, get_physical_volumes
-from database.connect import connect_to_database
+from sqlalchemy.orm import Session
 from database.utils import get_volume_entity, insert_volume_entity
 from exceptions.InstanceNotFound import InstanceNotFound
 from database.models import (
@@ -171,29 +169,3 @@ def insert_to_segment_stats(session: Session, segments: pd.DataFrame):
         )
         session.add(new_segment_stat)
         session.commit()
-
-
-def start_extracting_data(session: Session):
-    pvs = get_physical_volumes()
-    vgs = get_group_volumes()
-    lvs_fs = get_lv_lsblk()
-    print(lvs_fs)
-    insert_to_volume_group_stats(
-        session, vgs[["vg_uuid", "vg_name", "vg_size"]].drop_duplicates())
-    insert_to_physical_volume_stats(
-        session, pvs[["pv_uuid", "pv_name", "pv_size", "vg_uuid"]].drop_duplicates())
-    insert_to_logical_volume_stats(
-        session, lvs_fs[["lv_uuid", "lv_name", "fstype", "fssize", "fsused", "fsavail"]])
-    insert_to_segment_stats(
-        session, lvs_fs[["seg_size", "segment_range_start", "segment_range_end", "pv_name", "lv_uuid"]])
-    session.commit()
-    session.close()
-
-
-if __name__ == "__main__":
-    # Connect to the database
-    database_engine = connect_to_database()
-    DBSession = sessionmaker(bind=database_engine)
-    session = DBSession()
-
-    start_extracting_data(session)
