@@ -7,6 +7,7 @@ from database.connect import connect_to_database
 from database.utils import get_volume_entity, insert_volume_entity
 from exceptions.InstanceNotFound import InstanceNotFound
 from database.models import (
+    FileSystem,
     LogicalVolumeStats,
     PhysicalVolumeStats,
     VolumeGroup,
@@ -89,6 +90,16 @@ def insert_or_get_segment(session: Session, pv_name, lv_uuid):
     return found_segment
 
 
+def insert_or_get_file_system(session: Session, file_system_type: str) -> FileSystem:
+    file_system: FileSystem = session.query(FileSystem).filter_by(
+        file_system_type=file_system_type).first()
+    if file_system is None:
+        file_system = FileSystem(file_system_type=file_system_type)
+        session.add(file_system)
+        session.commit()
+    return file_system
+
+
 # Helper function to get or insert volume group stat
 def insert_to_volume_group_stats(session: Session, vgs: pd.DataFrame):
     for index, new_vg in vgs.iterrows():
@@ -129,12 +140,15 @@ def insert_to_logical_volume_stats(session: Session, lvs: pd.DataFrame):
         # find and get logical volume instance
         found_lv: LogicalVolume = insert_or_get_logical_volume(
             session, new_lv["lv_uuid"], new_lv["lv_name"])
+        found_file_system: FileSystem = insert_or_get_file_system(
+            session, new_lv["fstype"]
+        )
         new_lv_stat = LogicalVolumeStats(
-            file_system_type=new_lv["fstype"],
             file_system_size=math.ceil(double(new_lv["fssize"])),
             file_system_used_size=math.ceil(double(new_lv["fsused"])),
             file_system_available_size=math.ceil(
                 double(new_lv["fsavail"])),
+            file_system_id_fk=found_file_system.id,
             logical_volume_id_fk=found_lv.id
         )
         # add logical volume instance stat

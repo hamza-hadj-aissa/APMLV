@@ -151,21 +151,37 @@ class Segment(Base):
         back_populates="segments")
 
 
+class FileSystem(Base):
+    __tablename__ = "file_system"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    file_system_type: Mapped[str] = mapped_column(
+        String(10), nullable=False, unique=True)
+    created_at: Mapped[DateTime] = mapped_column(DateTime,
+                                                 nullable=False, default=func.now())
+
+    logical_volume_stats: Mapped[List["LogicalVolumeStats"]
+                                 ] = relationship("LogicalVolumeStats", back_populates="file_system")
+
+
 class LogicalVolumeStats(Base):
     __tablename__ = "logical_volume_stats"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # stats
-    file_system_type: Mapped[str] = mapped_column(String(10), nullable=False)
     file_system_size: Mapped[int] = mapped_column(nullable=False)
     file_system_used_size: Mapped[int] = mapped_column(nullable=False)
     file_system_available_size: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
+    file_system_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "file_system.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     logical_volume_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "logical_volume.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
+    file_system: Mapped[List["FileSystem"]] = relationship(
+        "FileSystem", back_populates="logical_volume_stats")
     logical_volume: Mapped[List["LogicalVolume"]
                            ] = relationship("LogicalVolume", back_populates="stats")
 
