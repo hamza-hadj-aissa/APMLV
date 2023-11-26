@@ -7,6 +7,7 @@ The project aims to develop a system that balances logical volumes. The status o
 -   [Prerequisites](#prerequisites)
 -   [Installation](#installation)
 -   [Configuration](#configuration)
+-   [Usage](#usage)
 
 ### Prerequisites
 
@@ -56,8 +57,22 @@ DB_PORT = 5432
 DB_USER = "your_database_user"
 DB_PASSWORD = "your_database_password"
 ```
-
 -   HOST_NAME and HOST_IP: The hostname and IP address where your database is hosted.
 -   DB_NAME: The name of your database.
 -   DB_PORT: The port on which your database server is running.
 -   DB_USER and DB_PASSWORD: Your database username and password.
+
+
+### Usage
+Run the main script to start scraping LVM statistics and storing them in the database:
+```bash
+python main.py
+```
+#### Logs
+Logs are categorized into three types: 
+- Postgres (database-related)
+- LVM (LVM related commands),
+- Main (main script logs).
+
+
+You can find log messages in the console and adjust logging settings in the logs/Logger.py file.
