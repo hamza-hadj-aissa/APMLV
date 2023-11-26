@@ -7,6 +7,7 @@ from numpy import double
 import pandas as pd
 
 from exceptions.LvmCommandError import LvmCommandError
+from logs.Logger import Logger
 
 # output volumes size unit for pvs, vgs and lvs commands
 SIZE_UNIT = "m"
@@ -35,12 +36,8 @@ def convert_bytes_to_mib(bytes_size: int):
     return bytes_size / (1024 ** 2)
 
 
-def run_command(command_array):
-    # Get the current time
-    current_time = datetime.datetime.now()
-    # Format the current time (optional)
-    formatted_time = current_time.strftime("%Y-%m-%d %H:%M:%S")
-    logging.info(f"[{formatted_time}] - Scraping LVM statistics...")
+def run_command(command_array, lvm_logger: Logger):
+    lvm_logger.get_logger().info("Scraping LVM statistics...")
     command_result = subprocess.run(
         command_array, capture_output=True, text=True)
     try:

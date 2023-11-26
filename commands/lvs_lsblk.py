@@ -1,18 +1,20 @@
 import pandas as pd
 from commands.lvs import get_logical_volumes
 from commands.utils import convert_bytes_to_mib, parse_size_number, run_command
+from logs.Logger import Logger
 
 
-def get_lv_lsblk():
+def get_lv_lsblk(lvm_logger: Logger):
     # Retrieve logical volume information
-    lvs_df = get_logical_volumes()
+    lvs_df = get_logical_volumes(lvm_logger)
     lv_fs_array = []
     # Iterate through unique logical volumes and retrieve filesystem information
     for index, row in lvs_df[['lv_uuid', 'lv_path']].drop_duplicates().iterrows():
         # Command to retrieve filesystem information for a logical volume
         logical_volumes_fs_command_array = [
             'lsblk', row['lv_path'], '-o', 'NAME,FSTYPE,FSSIZE,FSUSED,FSAVAIL,MOUNTPOINT', '--bytes', '--json']
-        json_format_output = run_command(logical_volumes_fs_command_array)[
+        lvm_logger.get_logger().info(" ".join(logical_volumes_fs_command_array))
+        json_format_output = run_command(logical_volumes_fs_command_array, lvm_logger)[
             'blockdevices'][0]
         json_format_output['lv_uuid'] = row['lv_uuid']
         lv_fs_array.append(json_format_output)
