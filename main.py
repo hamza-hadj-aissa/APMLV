@@ -28,12 +28,12 @@ def scrape_lvm_stats(session: Session, lvm_logger: Logger):
 
 def connect(db_logger: Logger):
     try:
-        db_logger.get_logger().info("Connecting to Database ({DB_NAME})...")
+        db_logger.get_logger().info(f"Connecting to Database ({DB_NAME})...")
         # Connect to the database
         database_engine = connect_to_database(db_logger)
         DBSession = sessionmaker(bind=database_engine)
         session = DBSession()
-        db_logger.get_logger().info(f"Connected to database {DB_NAME}")
+        db_logger.get_logger().info(f"Connected to database ({DB_NAME})")
         return session
     except SQLAlchemyError as e:
         raise e
@@ -42,6 +42,8 @@ def connect(db_logger: Logger):
 if __name__ == "__main__":
     db_logger = Logger("Postgres")
     lvm_logger = Logger("LVM")
+    main_logger = Logger("Main")
+    main_logger.get_logger().info("Starting Lvm Balancer...")
     try:
         session = connect(db_logger)
         schedule.every(5).seconds.do(scrape_lvm_stats,
