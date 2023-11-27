@@ -1,6 +1,8 @@
 import logging
+import subprocess
 from commands.lvs_lsblk import get_lv_lsblk
 from commands.pvs import get_physical_volumes
+from commands.utils import run_command
 from commands.vgs import get_group_volumes
 from database.connect import DB_NAME, connect_to_database
 from database.utils import insert_to_logical_volume_stats, insert_to_physical_volume_stats, insert_to_segment_stats, insert_to_volume_group_stats
@@ -40,14 +42,17 @@ def connect(db_logger: Logger):
 
 
 if __name__ == "__main__":
+    # expressed in seconds
+    # 60 * 5 = 5 minutes
+    time_interval = 60 * 5
     db_logger = Logger("Postgres")
     lvm_logger = Logger("LVM")
     main_logger = Logger("Main")
     main_logger.get_logger().info("Starting Lvm Balancer...")
     try:
         session = connect(db_logger)
-        schedule.every(5).seconds.do(scrape_lvm_stats,
-                                     session=session, lvm_logger=lvm_logger)
+        schedule.every(time_interval).seconds.do(scrape_lvm_stats,
+                                                 session=session, lvm_logger=lvm_logger)
         while True:
             schedule.run_pending()
     except KeyboardInterrupt:
