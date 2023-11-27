@@ -11,7 +11,7 @@ The project aims to develop a system that balances logical volumes. The status o
 
 ### Prerequisites
 
-List any software or dependencies that need to be installed before running your project. For example:
+Before running the project, make sure the following software and dependencies are installed on your machine:
 
 -   LVM (Logical Volume Manager)
 -   Python 3.x
