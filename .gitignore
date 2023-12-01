@@ -1,3 +1,7 @@
+# pytorch models
+lstm*.pt
+lstm*.pth
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
