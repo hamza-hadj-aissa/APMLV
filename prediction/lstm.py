@@ -157,9 +157,8 @@ def validate_one_epoch():
 
 def eval_new_dataset(model):
     test_df = pd.read_csv(
-        "/home/hamza/Desktop/studio/python/lvm_balancer/data_generation/dataset/test_logical_volume.csv")
+        "/home/hamza/Desktop/studio/python/lvm_balancer/prediction/dataset/test_logical_volume.csv")
     split_index = int(test_df.shape[0] * 0.8)
-    print(test_df.iloc[:6*6*6].iloc[:split_index].iloc[4:])
     split_index = int(test_df.shape[0] * 0.8)
     train_data, test_data = data_preprocessing(
         test_df.iloc[:6*6*6], ["used_space", "uuid"])
@@ -181,7 +180,7 @@ def eval_new_dataset(model):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("/home/hamza/Desktop/studio/python/lvm_balancer/data_generation/dataset/logical_volume_usage_history.csv",
+    df = pd.read_csv("/home/hamza/Desktop/studio/python/lvm_balancer/prediction/dataset/logical_volume_usage_history.csv",
                      )
     train_data, test_data = data_preprocessing(
         df,
@@ -239,9 +238,17 @@ if __name__ == "__main__":
         plt.xlabel('Time')
         plt.ylabel('Usage')
         plt.legend()
-        actual, pred = eval_new_dataset(model)
-        plt.plot(actual, label="actual usage (New Dataset)")
-        plt.plot(pred, label="predictions (New Dataset)")
-        plt.legend()
-        break
+        # actual, pred = eval_new_dataset(model)
+        # plt.plot(actual, label="actual usage (New Dataset)")
+        # plt.plot(pred, label="predictions (New Dataset)")
+        # plt.legend()
+        model_checkpoint = {
+            "epoch": num_epochs,
+            "model_state": model.state_dict(),
+            "optimizer": optimizer.state_dict()
+        }
+        # save model
+        torch.save(model_checkpoint,
+                   f"/home/hamza/Desktop/studio/python/lvm_balancer/prediction/models/lstm_checkpoint_{uuid}.pt")
+
     plt.show()
