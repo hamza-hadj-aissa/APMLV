@@ -45,9 +45,12 @@ if __name__ == "__main__":
     # expressed in seconds
     # 60 * 5 = 5 minutes
     time_interval = 60 * 5
-    db_logger = Logger("Postgres")
-    lvm_logger = Logger("LVM")
-    main_logger = Logger("Main")
+    db_logger = Logger(
+        "Postgres", path="/home/hamza/Desktop/studio/python/lvm_balancer/logs/lvm_balancer.log")
+    lvm_logger = Logger(
+        "LVM", path="/home/hamza/Desktop/studio/python/lvm_balancer/logs/lvm_balancer.log")
+    main_logger = Logger(
+        "Main", path="/home/hamza/Desktop/studio/python/lvm_balancer/logs/lvm_balancer.log")
     main_logger.get_logger().info("Starting Lvm Balancer...")
     try:
         session = connect(db_logger)

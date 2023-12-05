@@ -2,9 +2,10 @@ import logging
 
 
 class Logger:
-    def __init__(self, name=__name__, level=logging.DEBUG):
+    def __init__(self, name=__name__, level=logging.DEBUG, path: str = "logs.log"):
         self.logger = logging.getLogger(name)
         self.logger.setLevel(level)
+        self.path = path
 
         # Create a console handler and set the level
         console_handler = logging.StreamHandler()
@@ -15,7 +16,7 @@ class Logger:
             '[%(asctime)s] - %(name)s - %(levelname)s - %(message)s')
         console_handler.setFormatter(formatter)
 
-        file_handler = logging.FileHandler("./logs/lvm_balancer.log")
+        file_handler = logging.FileHandler(self.path)
         file_handler.setLevel(level)
 
         # Create a formatter and set the format for both handlers
