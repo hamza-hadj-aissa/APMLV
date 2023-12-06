@@ -11,6 +11,7 @@ import schedule
 from sqlalchemy.exc import SQLAlchemyError
 from exceptions.LvmCommandError import LvmCommandError
 from logs.Logger import Logger
+from root_directory import root_directory
 
 
 def scrape_lvm_stats(session: Session, lvm_logger: Logger):
@@ -46,11 +47,11 @@ if __name__ == "__main__":
     # 60 * 5 = 5 minutes
     time_interval = 60 * 5
     db_logger = Logger(
-        "Postgres", path="/home/hamza/Desktop/studio/python/lvm_balancer/logs/lvm_balancer.log")
+        "Postgres", path=f"{root_directory}/logs/lvm_balancer.log")
     lvm_logger = Logger(
-        "LVM", path="/home/hamza/Desktop/studio/python/lvm_balancer/logs/lvm_balancer.log")
+        "LVM", path=f"{root_directory}/logs/lvm_balancer.log")
     main_logger = Logger(
-        "Main", path="/home/hamza/Desktop/studio/python/lvm_balancer/logs/lvm_balancer.log")
+        "Main", path=f"{root_directory}/logs/lvm_balancer.log")
     main_logger.get_logger().info("Starting Lvm Balancer...")
     try:
         session = connect(db_logger)
