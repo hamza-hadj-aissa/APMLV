@@ -2,18 +2,20 @@ import uuid
 import random
 import csv
 from datetime import datetime, timedelta
-
+from root_directory import root_directory
 
 # Function to generate random usage data for a logical volume
+
+
 def generate_volume_data(total_capacity, previous_used_space, is_spike=False):
     # Change can be up to 10% of total capacity
-    change_range = max(1, int(total_capacity * 0.1))
+    change_range = max(1, int(total_capacity * 0.05))
 
-    if is_spike:
-        # Introduce a sudden spike (e.g., 30% increase)
-        change = random.randint(change_range, change_range * 3)
-    else:
-        change = random.randint(-change_range, change_range)
+    # if is_spike:
+    #     # Introduce a sudden spike (e.g., 30% increase)
+    #     change = random.randint(change_range, change_range * 3)
+    # else:
+    change = random.randint(-change_range, change_range)
 
     used_space = max(0, min(total_capacity, previous_used_space + change))
     free_space = total_capacity - used_space
@@ -65,9 +67,10 @@ def write_to_csv(data, filename):
 if __name__ == "__main__":
     dataset = []
     # 10 logical volumes
-    number_of_lv = 2
+    number_of_lv = 3
     disks_capacities = [random.randint(
         1000, 90000) for _ in range(number_of_lv)]
+    print(disks_capacities)
     counter = 0
     for disk_capacity in disks_capacities:
         volume_id = str(uuid.uuid4())
@@ -78,4 +81,4 @@ if __name__ == "__main__":
         dataset.extend(volume_history)
 
     write_to_csv(
-        dataset, "logical_volume_usage_history.csv")
+        dataset, f"{root_directory}prediction/dataset/logical_volume_usage_history.csv")
