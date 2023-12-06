@@ -1,3 +1,5 @@
+prediction/figures/*
+
 # pytorch models
 lstm*.pt
 lstm*.pth
