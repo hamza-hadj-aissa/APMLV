@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-from database.models import LogicalVolume, LogicalVolumeInfo, PhysicalVolume, VolumeGroup, VolumeGroupInfo
 import math
 from numpy import double
 import pandas as pd
@@ -17,7 +16,8 @@ from database.models import (
     LogicalVolumeInfo,
     Segment,
     SegmentStats,
-    VolumeGroupStats
+    VolumeGroupStats,
+    Priority
 )
 
 
@@ -95,12 +95,25 @@ def insert_or_get_physical_volume(session: Session, pv_uuid, pv_name, vg_uuid):
     return found_pv
 
 
+def insert_or_get_priority(session: Session, value: int):
+    found_priority = get_volume_entity(session, Priority, value=value)
+    if found_priority is None:
+        found_priority = Priority(
+            value=value
+        )
+        session.add(found_priority)
+        session.commit()
+    return found_priority
 # Helper function to get or insert a logical volume
-def insert_or_get_logical_volume(session: Session, lv_uuid, lv_name):
+
+
+def insert_or_get_logical_volume(session: Session, lv_uuid, lv_name, priority):
     found_lv = get_volume_entity(session, LogicalVolume, lv_uuid=lv_uuid)
     if found_lv is None or found_lv.info.lv_name != lv_name:
         found_lv = insert_volume_entity(
             session, LogicalVolume, LogicalVolumeInfo, "lv_name", "lv_uuid", lv_name, lv_uuid)
+        priority = insert_or_get_priority(session, priority)
+        found_lv.priority_id_fk = priority.id
         session.add(found_lv)
         session.commit()
     return found_lv
@@ -187,7 +200,7 @@ def insert_to_logical_volume_stats(session: Session, lvs: pd.DataFrame):
     for _, new_lv in lvs.iterrows():
         # find and get logical volume instance
         found_lv: LogicalVolume = insert_or_get_logical_volume(
-            session, new_lv["lv_uuid"], new_lv["lv_name"])
+            session, new_lv["lv_uuid"], new_lv["lv_name"], new_lv['priority'])
         found_file_system: FileSystem = insert_or_get_file_system(
             session, new_lv["fstype"]
         )

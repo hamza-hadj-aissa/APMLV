@@ -211,6 +211,8 @@ class LogicalVolume(Base):
     # Foreign keys
     logical_volume_info_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "logical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, unique=True)
+    priority_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "priority.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     info: Mapped["LogicalVolumeInfo"] = relationship(
         "LogicalVolumeInfo", back_populates="logical_volume")
@@ -220,6 +222,22 @@ class LogicalVolume(Base):
                        ] = relationship("LvChange", back_populates="logical_volume")
     segments: Mapped[List["Segment"]
                      ] = relationship("Segment", back_populates="logical_volume")
+    priority: Mapped["Priority"] = relationship(
+        "Priority", back_populates="logical_volume")
+
+
+class Priority(Base):
+    __tablename__ = "priority"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    label: Mapped[str] = mapped_column(nullable=True, unique=True)
+    value: Mapped[int] = mapped_column(nullable=False, unique=True)
+    created_at: Mapped[DateTime] = mapped_column(DateTime,
+                                                 nullable=False, default=func.now())
+
+    # Relationships
+    logical_volume: Mapped[List["LogicalVolume"]] = relationship("LogicalVolume",
+                                                                 back_populates="priority")
 
 
 class LvChangeEnum(enum.Enum):
