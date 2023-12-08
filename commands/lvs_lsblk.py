@@ -1,3 +1,4 @@
+import random
 import pandas as pd
 from commands.lvs import get_logical_volumes
 from commands.utils import convert_bytes_to_mib, parse_size_number, run_command
@@ -17,6 +18,8 @@ def get_lv_lsblk(lvm_logger: Logger):
         json_format_output = run_command(logical_volumes_fs_command_array, lvm_logger)[
             'blockdevices'][0]
         json_format_output['lv_uuid'] = row['lv_uuid']
+        # set random priority
+        json_format_output['priority'] = random.randint(1, 6)
         lv_fs_array.append(json_format_output)
 
     # Create a DataFrame from the extracted filesystem information
@@ -27,6 +30,7 @@ def get_lv_lsblk(lvm_logger: Logger):
     # Merge logical volume and filesystem DataFrames on 'lv_uuid'
     merged_df = pd.merge(lvs_df, filtered_lv_fs_dataframe,
                          "right", on='lv_uuid')
+
     # remove any trailing charachters "m", "k"...
     # convert bytes to MiB
     merged_df['fssize'] = merged_df['fssize'].apply(
