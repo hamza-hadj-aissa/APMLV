@@ -218,8 +218,8 @@ class LogicalVolume(Base):
         "LogicalVolumeInfo", back_populates="logical_volume")
     stats: Mapped["LogicalVolumeStats"] = relationship(
         "LogicalVolumeStats", back_populates="logical_volume")
-    lv_changes: Mapped[List["LvChange"]
-                       ] = relationship("LvChange", back_populates="logical_volume")
+    adjustmens: Mapped[List["Adjustment"]
+                       ] = relationship("Adjustment", back_populates="logical_volume")
     segments: Mapped[List["Segment"]
                      ] = relationship("Segment", back_populates="logical_volume")
     priority: Mapped["Priority"] = relationship(
@@ -240,20 +240,20 @@ class Priority(Base):
                                                                  back_populates="priority")
 
 
-class LvChangeEnum(enum.Enum):
+class AdjustmentStateEnum(enum.Enum):
     pending = 0
     done = 1
     failed = 2
 
 
-class LvChange(Base):
-    __tablename__ = "lv_change"
+class Adjustment(Base):
+    __tablename__ = "adjustment"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
-    status: Mapped[str] = mapped_column(Enum(LvChangeEnum),
-                                        default=LvChangeEnum.pending, nullable=False)
+    status: Mapped[str] = mapped_column(Enum(AdjustmentStateEnum),
+                                        default=AdjustmentStateEnum.pending, nullable=False)
     extend: Mapped[bool] = mapped_column(nullable=False)
     size: Mapped[Float] = mapped_column(Float(), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
@@ -265,4 +265,4 @@ class LvChange(Base):
 
     # Relationships
     logical_volume: Mapped["LogicalVolume"] = relationship("LogicalVolume",
-                                                           back_populates="lv_changes")
+                                                           back_populates="adjustmens")
