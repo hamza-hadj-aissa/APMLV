@@ -12,8 +12,10 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import mean_squared_error
 from root_directory import root_directory
 from logs.Logger import Logger
+import joblib
 
 DEVICE = 'cpu'
+LOOKBACK = 6
 
 
 class TimeSeriesDataset(Dataset):
@@ -65,7 +67,7 @@ class LogicalVolumeModel():
         self.logger = Logger(
             name=f"{self.lv_name}:Model", path=f"{root_directory}/logs/model_{self.lv_uuid}.log")
 
-    def train_model(self, Optimizer, n_epochs: int, lr: float, batch_size: int, Loss_function):
+    def train_model(self, n_epochs: int, lr: float, batch_size: int):
         train_data, test_data = self.__data_preprocessing(
             features=["used_space"]
         )
@@ -80,8 +82,8 @@ class LogicalVolumeModel():
 
         self.model.to(DEVICE)
         # model parameters
-        loss_function = Loss_function()
-        optimizer = Optimizer(
+        loss_function = nn.SmoothL1Loss()
+        optimizer = torch.optim.Adam(
             self.model.parameters(), lr=lr)
 
         for _ in range(n_epochs):
@@ -91,14 +93,20 @@ class LogicalVolumeModel():
                 test_loader=test_loader, loss_function=loss_function)
         self.__plot_results(train_dataset=train_dataset,
                             test_dataset=test_dataset, offset=36)
+
+        # model params
         model_checkpoint = {
             "epoch": n_epochs,
             "model_state": self.model.state_dict(),
-            "optimizer": optimizer.state_dict()
+            "optimizer": optimizer.state_dict(),
         }
         # save model
         torch.save(model_checkpoint,
                    f"{root_directory}/prediction/models/lstm_checkpoint_{self.lv_uuid}.pt")
+
+        # save scaler
+        joblib.dump(
+            self.scaler, f"{root_directory}/prediction/scalers/scaler_{self.lv_uuid}.joblib")
 
     def __create_sequences(self, dataframe, n_steps):
         for i in range(1, n_steps+1):
@@ -279,9 +287,10 @@ class LogicalVolumeModel():
 if __name__ == "__main__":
     df = pd.read_csv(f"{root_directory}/prediction/dataset/logical_volume_usage_history.csv",
                      )
+    lr = 0.00001
     for uuid in df["uuid"].drop_duplicates():
         logicalVolumeModel = LogicalVolumeModel(
-            df[df["uuid"] == uuid], input_size=1, hidden_size=32, num_hidden_layers=3, lookback=6)
-        logicalVolumeModel.train_model(Optimizer=torch.optim.Adam,
-                                       n_epochs=100, lr=0.00001, batch_size=16, Loss_function=nn.SmoothL1Loss)
+            df[df["uuid"] == uuid], input_size=1, hidden_size=64, num_hidden_layers=1, lookback=LOOKBACK)
+        logicalVolumeModel.train_model(
+            n_epochs=50, lr=lr, batch_size=16)
     plt.show()

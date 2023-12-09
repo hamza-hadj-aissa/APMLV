@@ -1,4 +1,4 @@
-prediction/figures/*
+prediction/figures/*.png
 
 # pytorch models
 lstm*.pt

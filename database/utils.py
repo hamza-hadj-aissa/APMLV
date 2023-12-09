@@ -17,7 +17,8 @@ from database.models import (
     Segment,
     SegmentStats,
     VolumeGroupStats,
-    Priority
+    Priority,
+    Adjustment
 )
 
 
@@ -230,4 +231,20 @@ def insert_to_segment_stats(session: Session, segments: pd.DataFrame):
             segment_id_fk=found_segment.id
         )
         session.add(new_segment_stat)
+        session.commit()
+
+# Helper function to insert logical volume adjustment
+
+
+def insert_to_logical_volume_adjustment(session: Session, adjustments: list[dict[str, int | str]]):
+    for index, adjustment in enumerate(adjustments):
+        lv_uuid = adjustment["lv_uuid"]
+        found_lv = get_volume_entity(session, LogicalVolume, lv_uuid=lv_uuid)
+        size = adjustment["size"]
+        new_adjustment = Adjustment(
+            logical_volume_id_fk=found_lv.id,
+            size=size,
+            extend=size >= 0
+        )
+        session.add(new_adjustment)
         session.commit()
