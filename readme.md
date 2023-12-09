@@ -14,7 +14,7 @@ The project aims to develop a system that balances logical volumes. The status o
 Before running the project, make sure the following software and dependencies are installed on your machine:
 
 -   LVM (Logical Volume Manager)
--   Python 3.x
+-   Python 3.10.x
 -   Pip
 -   PostgreSQL
 
