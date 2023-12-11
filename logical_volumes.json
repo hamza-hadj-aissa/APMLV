@@ -1,0 +1,23 @@
+{
+    "volume_groups": [
+        {
+            "vg_name": "vg1",
+            "logical_volumes": [
+                {
+                    "lv_name": "lvol1"
+                },
+                {
+                    "lv_name": "lv2"
+                }
+            ]
+        },
+        {
+            "vg_name": "vg2",
+            "logical_volumes": [
+                {
+                    "lv_name": "lv3"
+                }
+            ]
+        }
+    ]
+}

@@ -5,7 +5,7 @@ from database.utils import insert_to_logical_volume_adjustment, insert_to_logica
 from sqlalchemy.orm import Session
 from exceptions.LvmCommandError import LvmCommandError
 from logs.Logger import Logger
-from main import calculate_allocations_volumes, connect, execute_logical_volumes_sizes_adjustments
+from main import connect, execute_logical_volumes_sizes_adjustments, process_volume_groups
 from prediction.dataset.generate import generate_usage_history
 from database.models import (
     LogicalVolumeStats,
@@ -32,33 +32,31 @@ def lv_stats_mock(session: Session):
         file_system_used_size = lv_stats.file_system_used_size
         generated_lv_stats = generate_usage_history(lv_uuid, lv_name, file_system_type, priority, file_system_size, file_system_used_size, 10,
                                                     random.randint(1, 24))
-        print(generated_lv_stats)
         df = pd.DataFrame.from_dict(generated_lv_stats)
         df.rename(columns={
             "uuid": "lv_uuid",
             "name": "lv_name",
-            "total_capacity": "fssize",
-            "free_space": "fsavail",
-            "used_space": "fsused"
+            "file_system_size": "fssize",
+            "file_system_available_size": "fsavail",
+            "file_system_used_size": "fsused"
         }, inplace=True)
         insert_to_logical_volume_stats(session, df)
 
 
 def mock_program(session: Session, lvm_logger: Logger):
     lv_stats_mock(session)
-    allocations = calculate_allocations_volumes(
-        session,
-        lvm_logger,
-        allocation_volume=1000
-    )
-    insert_to_logical_volume_adjustment(session, allocations)
-    execute_logical_volumes_sizes_adjustments(session)
+    allocations = process_volume_groups(session, lvm_logger)
+    for volume_group in allocations:
+        insert_to_logical_volume_adjustment(
+            session, volume_group["logical_volumes_adjustments_sizes"])
+
+    execute_logical_volumes_sizes_adjustments(session, lvm_logger)
 
 
 if __name__ == "__main__":
     # expressed in seconds
     # 60 * 5 = 5 minutes
-    time_interval = 5
+    time_interval = 2
     log_file_path = f"{root_directory}/logs/lvm_balancer.log"
     # define loggers
     db_logger = Logger("Postgres", path=log_file_path)
@@ -69,11 +67,11 @@ if __name__ == "__main__":
     # process starts here --
     try:
         session = connect(db_logger)
-        schedule.every(time_interval).seconds.do(mock_program,
-                                                 session=session, lvm_logger=lvm_logger)
+        scheduler = schedule.Scheduler()
+        scheduler.every(time_interval).seconds.do(mock_program,
+                                                  session=session, lvm_logger=lvm_logger)
         while True:
-            schedule.run_pending()
-
+            scheduler.run_pending()
     except KeyboardInterrupt:
         pass
     except LvmCommandError as e:
