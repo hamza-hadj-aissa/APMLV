@@ -34,12 +34,12 @@ def generate_usage_history(volume_id, volume_name, fstype, priority, disks_capac
         entry = {
             "uuid": volume_id,
             "name": volume_name,
-            "date": current_date.strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": current_date.strftime("%Y-%m-%d %H:%M:%S"),
             "fstype": fstype,
             "priority": priority,
-            "total_capacity": disks_capacity,
-            "free_space": free_space,
-            "used_space": used_space
+            "file_system_size": disks_capacity,
+            "file_system_available_size": free_space,
+            "file_system_used_size": used_space
         }
         history.append(entry)
         current_date -= timedelta(minutes=10)
@@ -52,8 +52,14 @@ def generate_usage_history(volume_id, volume_name, fstype, priority, disks_capac
 # Function to write data to a CSV file
 def write_to_csv(data, filename):
     with open(filename, mode='w', newline='') as file:
-        fieldnames = ["uuid", "name", "date",
-                      "total_capacity", "free_space", "used_space"]
+        fieldnames = ["uuid",
+                      "name",
+                      "created_at",
+                      "fstype",
+                      "priority",
+                      "file_system_size",
+                      "file_system_available_size",
+                      "file_system_used_size"]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
         writer.writeheader()
         for entry in data:
@@ -68,15 +74,15 @@ if __name__ == "__main__":
     disks_capacities = [random.randint(
         1000, 90000) for _ in range(number_of_lv)]
     print(disks_capacities)
-    counter = 0
     uuids = ["G05dru-uGpm-BOuB-b53j-ZWQb-sJhv-NdvNjg",
              "Gwys5G-B3Zc-qlg3-tUHF-O2J2-Rvvm-OpeuZs", "fVepbE-JBEw-IKaa-7svK-P56K-Pi9X-9WyIGZ"]
-    for disk_capacity in [974, 974, 974]:
-        volume_id = uuids[counter]
-        volume_name = f"Volume_{counter + 1}"
-        counter = counter + 1
+    priorities = [1, 5, 2]
+    ids = [1, 2, 3]
+    for index, disk_capacity in enumerate([974, 974, 974]):
+        volume_id = uuids[index]
+        volume_name = f"Volume_{index + 1}"
         volume_history = generate_usage_history(
-            volume_id, volume_name, disk_capacity, number_of_minutes=60*24*30*12, spike_hour=random.randint(1, 1440))
+            ids[index], volume_name, 1, priorities[index], disk_capacity, previous_used_space=random.randint(0, 974), number_of_minutes=60*24*30*12, spike_hour=random.randint(1, 1440))
         dataset.extend(volume_history)
 
     write_to_csv(
