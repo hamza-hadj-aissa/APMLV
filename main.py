@@ -68,7 +68,7 @@ def execute_logical_volumes_sizes_adjustments(session: Session, lvm_logger: Logg
         session.commit()
 
 
-def get_logical_volumes_info_list(session: Session, vg_uuid: str, lv_stats_limit):
+def get_logical_volumes_info_list(session: Session, vg_uuid: str, logical_volumes: list[dict[str, str]], lv_stats_limit):
     logical_volumes_list_by_volume_group = session.query(LogicalVolumeInfo, LogicalVolume, VolumeGroupInfo, VolumeGroup)\
         .join(LogicalVolume)\
         .join(Segment)\
@@ -77,6 +77,7 @@ def get_logical_volumes_info_list(session: Session, vg_uuid: str, lv_stats_limit
         .join(VolumeGroupStats)\
         .join(VolumeGroupInfo)\
         .filter(VolumeGroup.vg_uuid == vg_uuid)\
+        .filter(LogicalVolumeInfo.lv_name.in_(logical_volumes))\
         .all()
     logical_volumes_informations_list = []
     for logical_volume in logical_volumes_list_by_volume_group:
@@ -123,18 +124,23 @@ def get_logical_volumes_info_list(session: Session, vg_uuid: str, lv_stats_limit
 
 def get_volume_groups_info_list(session: Session) -> list[dict[str, str | int | float]]:
     with open(f"{root_directory}/logical_volumes.json", 'r') as file:
-        volume_groups = [vg["vg_name"]
-                         for vg in json.load(file)["volume_groups"]]
+        logical_volumes_json = json.load(file)
 
-    volume_groups_informations_list = []
+    volume_groups = sorted([vg
+                            for vg in logical_volumes_json["volume_groups"]], key=lambda x: x['vg_name'])
 
-    volume_groups_list = session.query(
+    volume_groups_instances = session.query(
         VolumeGroup, VolumeGroupInfo)\
         .join(VolumeGroupInfo)\
-        .filter(VolumeGroupInfo.vg_name.in_(volume_groups))\
+        .filter(VolumeGroupInfo.vg_name.in_([volume_group["vg_name"] for volume_group in volume_groups]))\
+        .order_by(VolumeGroupInfo.vg_name.asc())\
         .all()
+    volume_groups_informations_list = []
 
-    for volume_group in volume_groups_list:
+    for index, volume_group in enumerate(volume_groups_instances):
+        logical_volumes_names = [logical_volume["lv_name"]
+                                 for logical_volume in volume_groups[index]["logical_volumes"]]
+        print(logical_volumes_names, volume_group.VolumeGroupInfo.vg_name)
         volume_group_stat = session.query(VolumeGroupStats).filter_by(
             volume_group_id_fk=volume_group.VolumeGroup.id)\
             .order_by(VolumeGroupStats.created_at.desc())\
@@ -147,7 +153,7 @@ def get_volume_groups_info_list(session: Session) -> list[dict[str, str | int | 
             "vg_name": vg_name,
             "vg_uuid": vg_uuid,
             "vg_free": vg_free,
-            "logical_volumes": get_logical_volumes_info_list(session, vg_uuid, lv_stats_limit=6)
+            "logical_volumes": get_logical_volumes_info_list(session, vg_uuid, logical_volumes_names, lv_stats_limit=6)
         }
         volume_groups_informations_list.append(vg_data)
     # return the list of dictionaries
