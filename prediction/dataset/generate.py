@@ -75,15 +75,15 @@ if __name__ == "__main__":
         1000, 90000) for _ in range(number_of_lv)]
     print(disks_capacities)
     uuids = ["G05dru-uGpm-BOuB-b53j-ZWQb-sJhv-NdvNjg",
-             "Gwys5G-B3Zc-qlg3-tUHF-O2J2-Rvvm-OpeuZs", "fVepbE-JBEw-IKaa-7svK-P56K-Pi9X-9WyIGZ"]
-    priorities = [1, 5, 2]
-    ids = [1, 2, 3]
-    for index, disk_capacity in enumerate([974, 974, 974]):
+             "Gwys5G-B3Zc-qlg3-tUHF-O2J2-Rvvm-OpeuZs", "fVepbE-JBEw-IKaa-7svK-P56K-Pi9X-9WyIGZ", "N25ISJ-C2F9-3utJ-BpTL-rxA0-d6jm-dRlYfn"]
+    priorities = [1, 5, 2, 3]
+    ids = [1, 2, 3, 4]
+    for index, disk_capacity in enumerate([974, 604, 974, 982]):
         volume_id = uuids[index]
         volume_name = f"Volume_{index + 1}"
         volume_history = generate_usage_history(
-            ids[index], volume_name, 1, priorities[index], disk_capacity, previous_used_space=random.randint(0, 974), number_of_minutes=60*24*30*12, spike_hour=random.randint(1, 1440))
+            ids[index], volume_name, 1, priorities[index], disk_capacity, previous_used_space=random.randint(0, disk_capacity), number_of_minutes=60*24*30*12, spike_hour=random.randint(1, 10*6*24))
         dataset.extend(volume_history)
 
     write_to_csv(
-        dataset, f"{root_directory}/prediction/dataset/logical_volume_usage_history.csv")
+        dataset, f"{root_directory}/prediction/dataset/lvs.csv")
