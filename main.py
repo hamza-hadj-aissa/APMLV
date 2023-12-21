@@ -53,7 +53,9 @@ def scrape_lvm_stats(session: Session, lvm_logger: Logger):
     insert_to_segment_stats(
         session, lvs_fs[["seg_size", "segment_range_start", "segment_range_end", "pv_name", "lv_uuid"]])
     allocations = process_volume_groups(session, lvm_logger)
-    insert_to_logical_volume_adjustment(session, allocations)
+    for volume_group in allocations:
+        insert_to_logical_volume_adjustment(
+            session, volume_group["logical_volumes_adjustments_sizes"])
     execute_logical_volumes_sizes_adjustments(session, lvm_logger)
     session.close()
 
