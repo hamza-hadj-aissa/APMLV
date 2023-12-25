@@ -1,7 +1,7 @@
 {
     "hosts": [
         {
-            "hostname": "bob@192.168.1.76",
+            "hostname": "bob@192.168.1.75",
             "volume_groups": [
                 {
                     "vg_name": "vg1",

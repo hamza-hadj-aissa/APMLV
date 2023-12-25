@@ -22,6 +22,7 @@ from database.models import (
     Adjustment,
     VolumeGroupStats
 )
+from logs.Logger import Logger
 
 
 class DuplicateRowError(Exception):
@@ -175,21 +176,31 @@ def insert_or_get_file_system(session: Session, file_system_type: str) -> FileSy
     return file_system
 
 
-def insert_to_logical_volume_adjustment(session: Session, hostname: str, adjustments: list[dict[str, int | str]]):
-    for index, adjustment in enumerate(adjustments):
-        lv_uuid = adjustment["lv_uuid"]
-        logical_volume: LogicalVolume = get_volume_entity(
-            session, LogicalVolume, hostname=hostname, lv_uuid=lv_uuid
-        )
-        size = adjustment["size"]
-        new_adjustment = Adjustment(
-            logical_volume_id_fk=logical_volume.id,
-            size=size,
-            extend=size >= 0
-        )
-        logical_volume.adjustmens.append(new_adjustment)
-        session.add(logical_volume)
-        session.add(new_adjustment)
+# Function to insert logical volume adjustments into the database
+def insert_to_logical_volume_adjustment(session: Session, db_logger: Logger, hostname: str, adjustments: list[dict[str, int | str]]):
+    with session.begin_nested():
+        try:
+            for index, adjustment in enumerate(adjustments):
+                lv_uuid = adjustment["lv_uuid"]
+                # Query the logical volume based on UUID and hostname
+                logical_volume: LogicalVolume = session.query(LogicalVolume)\
+                    .filter_by(lv_uuid=lv_uuid)\
+                    .join(Segment)\
+                    .join(Host)\
+                    .filter_by(hostname=hostname)\
+                    .first()
+                size = adjustment["size"]
+                # Create a new adjustment object
+                new_adjustment = Adjustment(
+                    size=size,
+                    extend=size >= 0,
+                    logical_volume=logical_volume
+                )
+                session.add(new_adjustment)
+            session.commit()
+        except IntegrityError as e:
+            db_logger.get_logger().error(e)
+            session.rollback()
 
 
 # create a dataframe from the pvs information

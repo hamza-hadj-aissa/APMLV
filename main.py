@@ -1,12 +1,10 @@
 import json
-import torch
-from commands.lvs_lsblk import get_lv_lsblk
-from commands.pvs import get_physical_volumes
-from commands.vgs import get_group_volumes
-from database.connect import DB_NAME, connect_to_database
-from database.utils import insert_to_logical_volume_adjustment, insert_to_logical_volume_stats, insert_to_physical_volume_stats, insert_to_segment_stats, insert_to_volume_group_stats
-from sqlalchemy.orm import sessionmaker, Session
 import schedule
+import torch
+from ansible.extract import extract_lvm_informations_from_host
+from database.connect import DB_NAME, connect_to_database
+from database.utils import insert_lvm_data_to_database, insert_to_logical_volume_adjustment, transform_lvm_data_to_dataframe
+from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import SQLAlchemyError
 from exceptions.LvmCommandError import LvmCommandError
 from helpers import load_model, load_scaler, reverse_transform
@@ -15,8 +13,8 @@ from prediction.lstm import LOOKBACK
 from root_directory import root_directory
 from database.models import (
     Adjustment,
+    Host,
     LogicalVolumeStats,
-    PhysicalVolume,
     Segment,
     VolumeGroup,
     LogicalVolume,
@@ -40,24 +38,82 @@ def connect(db_logger: Logger):
         raise e
 
 
-def scrape_lvm_stats(session: Session, lvm_logger: Logger):
-    pvs = get_physical_volumes(lvm_logger)
-    vgs = get_group_volumes(lvm_logger)
-    lvs_fs = get_lv_lsblk(lvm_logger)
-    insert_to_volume_group_stats(
-        session, vgs[["vg_uuid", "vg_name", "vg_size", "vg_free"]].drop_duplicates())
-    insert_to_physical_volume_stats(
-        session, pvs[["pv_uuid", "pv_name", "pv_size", "vg_uuid"]].drop_duplicates())
-    insert_to_logical_volume_stats(
-        session, lvs_fs[["lv_uuid", "lv_name", "fstype", "fssize", "fsused", "fsavail", "priority"]])
-    insert_to_segment_stats(
-        session, lvs_fs[["seg_size", "segment_range_start", "segment_range_end", "pv_name", "lv_uuid"]])
-    allocations = process_volume_groups(session, lvm_logger)
-    for volume_group in allocations:
+def scrape_lvm_stats(session: Session, lvm_logger: Logger, ansible_logger: Logger, db_logger: Logger):
+    with open(f"{root_directory}/logical_volumes.json", 'r') as file:
+        logical_volumes_json = json.load(file)
+    hosts = [host["hostname"] for host in logical_volumes_json['hosts']]
+    # get the hosts from the inventory file
+    with open(f"{root_directory}/ansible/inventory", 'r') as f:
+        # remove empty lines
+        hosts_passwords = [line.strip()
+                           for line in f if line.strip().split(" ")[0] in hosts]
+        # Iterate over the hosts
+        for host_password in hosts_passwords:
+            # Extract lvm informations from the host
+            try:
+                host_informations = extract_lvm_informations_from_host(
+                    ansible_logger=ansible_logger,
+                    playbook=f"{root_directory}/ansible/playbooks/extract_lvm_data.yml",
+                    host=host_password,
+                    extravars={
+                        'logical_volumes': " ".join([f'/dev/mapper/{vg["vg_name"]}-{lv["lv_name"]}' for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for lv in vg["logical_volumes"]]),
+                        'volume_groups': " ".join([vg['vg_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"]]),
+                        'physical_volumes': " ".join(pv['pv_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for pv in vg["physical_volumes"])
+                    }
+                )
+                print(host_informations)
+                # Transform the lvm informations to a dataframe
+                hostname, lvm_dataframe = transform_lvm_data_to_dataframe(
+                    host_informations
+                )
+                # Insert the lvm dataframe to the database
+                insert_lvm_data_to_database(session, hostname, lvm_dataframe)
+            except Exception as e:
+                if isinstance(e, KeyboardInterrupt):
+                    raise KeyboardInterrupt
+                else:
+                    ansible_logger.get_logger().error(e)
+                    hosts.remove(host_password.split(" ")[0])
+                    continue
+    # process the volume groups
+    hosts_allocations = []
+    for host in hosts:
+        host_allocations = process_host(
+            session,
+            lvm_logger,
+            [
+                volume_group for host_volume_groups in logical_volumes_json['hosts']
+                for volume_group in host_volume_groups["volume_groups"]
+                if host_volume_groups['hostname'] == host
+            ],
+            host
+        )
+        hosts_allocations.append(host_allocations)
+    for host_allocations in hosts_allocations:
+        logical_volumes_adjustments_sizes = [
+            logical_volume_adjustment_size for volume_group in host_allocations["allocations"]
+            for logical_volume_adjustment_size in volume_group["logical_volumes_adjustments_sizes"]
+        ]
         insert_to_logical_volume_adjustment(
-            session, volume_group["logical_volumes_adjustments_sizes"])
-    execute_logical_volumes_sizes_adjustments(session, lvm_logger)
+            session, db_logger, hostname, logical_volumes_adjustments_sizes
+        )
+    # execute_logical_volumes_sizes_adjustments(session, lvm_logger)
     session.close()
+
+
+def process_host(session: Session, lvm_logger: Logger, volume_groups: list[dict], host: str):
+    # get the volume groups of the host
+    # process the host
+    allocation = process_volume_groups(
+        session=session,
+        lvm_logger=lvm_logger,
+        hostname=host,
+        volume_groups=volume_groups
+    )
+    return {
+        "host": host,
+        "allocations": allocation
+    }
 
 
 def execute_logical_volumes_sizes_adjustments(session: Session, lvm_logger: Logger):
@@ -70,13 +126,13 @@ def execute_logical_volumes_sizes_adjustments(session: Session, lvm_logger: Logg
         session.commit()
 
 
-def get_logical_volumes_info_list(session: Session, vg_uuid: str, logical_volumes: list[dict[str, str]], lv_stats_limit):
+def get_logical_volumes_info_list(session: Session, hostname: str, vg_uuid: str, logical_volumes: list[dict[str, str]], lv_stats_limit):
     logical_volumes_list_by_volume_group = session.query(LogicalVolumeInfo, LogicalVolume, VolumeGroupInfo, VolumeGroup)\
         .join(LogicalVolume)\
         .join(Segment)\
-        .join(PhysicalVolume)\
+        .join(Host)\
+        .filter_by(hostname=hostname)\
         .join(VolumeGroup)\
-        .join(VolumeGroupStats)\
         .join(VolumeGroupInfo)\
         .filter(VolumeGroup.vg_uuid == vg_uuid)\
         .filter(LogicalVolumeInfo.lv_name.in_(logical_volumes))\
@@ -124,15 +180,13 @@ def get_logical_volumes_info_list(session: Session, vg_uuid: str, logical_volume
     return logical_volumes_informations_list
 
 
-def get_volume_groups_info_list(session: Session) -> list[dict[str, str | int | float]]:
-    with open(f"{root_directory}/logical_volumes.json", 'r') as file:
-        logical_volumes_json = json.load(file)
-
-    volume_groups = sorted([vg
-                            for vg in logical_volumes_json["volume_groups"]], key=lambda x: x['vg_name'])
-
+def get_volume_groups_info_list(session: Session, hostname: str, volume_groups: list[dict]) -> list[dict[str, str | int | float]]:
+    # get the volume groups from the database
     volume_groups_instances = session.query(
         VolumeGroup, VolumeGroupInfo)\
+        .join(Segment)\
+        .join(Host)\
+        .filter(Host.hostname == hostname)\
         .join(VolumeGroupInfo)\
         .filter(VolumeGroupInfo.vg_name.in_([volume_group["vg_name"] for volume_group in volume_groups]))\
         .order_by(VolumeGroupInfo.vg_name.asc())\
@@ -142,12 +196,17 @@ def get_volume_groups_info_list(session: Session) -> list[dict[str, str | int | 
     for index, volume_group in enumerate(volume_groups_instances):
         logical_volumes_names = [logical_volume["lv_name"]
                                  for logical_volume in volume_groups[index]["logical_volumes"]]
-        print(logical_volumes_names, volume_group.VolumeGroupInfo.vg_name)
-        volume_group_stat = session.query(VolumeGroupStats).filter_by(
-            volume_group_id_fk=volume_group.VolumeGroup.id)\
+        # get latest stats of one volume group
+        volume_group_stat = session.query(VolumeGroupStats)\
+            .filter_by(volume_group_id_fk=volume_group.VolumeGroup.id)\
+            .join(VolumeGroup)\
+            .join(Segment)\
+            .join(Host)\
+            .filter_by(hostname=hostname)\
             .order_by(VolumeGroupStats.created_at.desc())\
             .limit(1)\
             .all()
+        # create a dictionary for each volume group
         vg_uuid = volume_group.VolumeGroup.vg_uuid
         vg_name = volume_group.VolumeGroupInfo.vg_name
         vg_free = volume_group_stat[0].vg_free
@@ -155,8 +214,9 @@ def get_volume_groups_info_list(session: Session) -> list[dict[str, str | int | 
             "vg_name": vg_name,
             "vg_uuid": vg_uuid,
             "vg_free": vg_free,
-            "logical_volumes": get_logical_volumes_info_list(session, vg_uuid, logical_volumes_names, lv_stats_limit=6)
+            "logical_volumes": get_logical_volumes_info_list(session, hostname, vg_uuid, logical_volumes_names, lv_stats_limit=6)
         }
+        # add the dictionary to the list
         volume_groups_informations_list.append(vg_data)
     # return the list of dictionaries
     return volume_groups_informations_list
@@ -201,10 +261,9 @@ def calculate_mean_proportions(logical_volumes_info_list: list[dict[str, int]]) 
     usage_series = np.array(
         [usage_serie["usage_serie"] for usage_serie in logical_volumes_info_list])
     column_sums = usage_series.sum(axis=0)
-    proportions = usage_series / column_sums
+    proportions = np.where(column_sums == 0, 0, usage_series / column_sums)
     mean_proportions: list[float] = np.mean(
         proportions, axis=1).tolist()
-
     return [
         {
             "lv_uuid": usage_serie["lv_uuid"],
@@ -292,7 +351,7 @@ def process_logical_volumes(lvm_logger: Logger, logical_volumes_informations_lis
     return logical_volumes_informations_list
 
 
-def process_volume_groups(session: Session, lvm_logger: Logger):
+def process_volume_groups(session: Session, lvm_logger: Logger, hostname: str, volume_groups: list[dict]):
     """
     Make decisions based on predictions, mean proportions, and allocation volume.
 
@@ -304,7 +363,9 @@ def process_volume_groups(session: Session, lvm_logger: Logger):
     - None
     """
     # Get VG data from the database
-    volume_groups_informations_list = get_volume_groups_info_list(session)
+    volume_groups_informations_list = get_volume_groups_info_list(
+        session, hostname, volume_groups
+    )
     adjustments = []
     # Step 1: Process each VG
     for index, volume_group_informations in enumerate(volume_groups_informations_list):
@@ -399,7 +460,8 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
         if allocation_reclaim_size < 0:
             # logical volume prediction < file system size
             # giving up volume
-
+            print(twenty_percent_of_prediction,
+                  mean_proportion, twenty_percent_of_prediction)
             # logical volume future size
             size = int(np.round(
                 (twenty_percent_of_prediction * mean_proportion) + twenty_percent_of_prediction))
@@ -469,6 +531,9 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
         "----------------------------------------------------------------------------------")
     return logical_volumes_adjustments_sizes
 
+# FIXME: Handle column_sums equal to 0
+# FIXME: Handle model load
+
 
 if __name__ == "__main__":
     # expressed in seconds
@@ -478,6 +543,7 @@ if __name__ == "__main__":
     # define loggers
     db_logger = Logger("Postgres", path=log_file_path)
     lvm_logger = Logger("LVM", path=log_file_path)
+    ansible_logger = Logger("Ansible", path=log_file_path)
     main_logger = Logger("Main", path=log_file_path)
     main_logger.get_logger().info("Starting Lvm Balancer...")
 
@@ -485,12 +551,12 @@ if __name__ == "__main__":
     try:
         session = connect(db_logger)
         schedule.every(time_interval).seconds.do(scrape_lvm_stats,
-                                                 session=session, lvm_logger=lvm_logger)
+                                                 session=session, lvm_logger=lvm_logger, ansible_logger=ansible_logger, db_logger=db_logger)
         while True:
             schedule.run_pending()
 
     except KeyboardInterrupt:
-        pass
+        exit(0)
     except LvmCommandError as e:
         lvm_logger.get_logger().error(e)
     except SQLAlchemyError as e:
