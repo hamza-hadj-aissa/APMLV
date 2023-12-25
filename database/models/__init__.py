@@ -1,12 +1,24 @@
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy import String, Float, ForeignKey, DateTime, func, Enum
+from sqlalchemy import String, Float, ForeignKey, DateTime, UniqueConstraint, func, Enum
 import enum
 from typing import List
-from sqlalchemy.orm import Session
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class Host(Base):
+    __tablename__ = "host"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    hostname: Mapped[str] = mapped_column(nullable=False, unique=True)
+    created_at: Mapped[DateTime] = mapped_column(DateTime,
+                                                 nullable=False, default=func.now())
+
+    # Relationships
+    segments: Mapped[List["Segment"]
+                     ] = relationship(back_populates="host")
 
 
 class VolumeGroupStats(Base):
@@ -54,10 +66,10 @@ class VolumeGroup(Base):
     # Relationships
     info: Mapped["VolumeGroupInfo"] = relationship(
         "VolumeGroupInfo", back_populates="volume_group")
-    stats: Mapped["VolumeGroupStats"] = relationship(
+    stats: Mapped[List["VolumeGroupStats"]] = relationship(
         "VolumeGroupStats", back_populates="volume_group")
-    physical_volumes: Mapped[List["PhysicalVolume"]
-                             ] = relationship("PhysicalVolume", back_populates="volume_group")
+    segments: Mapped[List["Segment"]
+                     ] = relationship(back_populates="volume_group")
 
 
 class PhysicalVolumeStats(Base):
@@ -99,18 +111,13 @@ class PhysicalVolume(Base):
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
-    volume_group_id_fk: Mapped[int] = mapped_column(
-        ForeignKey("volume_group.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
-    # Foreign keys
     physical_volume_info_id_fk: Mapped[int] = mapped_column(ForeignKey(
-        "physical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, unique=True)
+        "physical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     info: Mapped["PhysicalVolumeInfo"] = relationship(
         "PhysicalVolumeInfo", back_populates="physical_volume")
-    stats: Mapped["PhysicalVolumeStats"] = relationship(
+    stats: Mapped[List["PhysicalVolumeStats"]] = relationship(
         "PhysicalVolumeStats", back_populates="physical_volume")
-    volume_group: Mapped["VolumeGroup"] = relationship(
-        "VolumeGroup", back_populates="physical_volumes")
     segments: Mapped[List["Segment"]
                      ] = relationship(back_populates="physical_volume")
 
@@ -128,8 +135,8 @@ class SegmentStats(Base):
     segment_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "segment.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
-    segments: Mapped[List["Segment"]
-                     ] = relationship("Segment", back_populates="stats")
+    segment: Mapped["Segment"
+                    ] = relationship("Segment", back_populates="stats")
 
 
 class Segment(Base):
@@ -143,13 +150,24 @@ class Segment(Base):
         "logical_volume.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     physical_volume_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "physical_volume.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+    volume_group_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "volume_group.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+    host_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "host.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
-    stats: Mapped["SegmentStats"] = relationship(
-        "SegmentStats", back_populates="segments")
+    stats: Mapped[List["SegmentStats"]] = relationship(
+        "SegmentStats", back_populates="segment")
     logical_volume: Mapped["LogicalVolume"] = relationship(
         back_populates="segments")
     physical_volume: Mapped["PhysicalVolume"] = relationship(
         back_populates="segments")
+    volume_group: Mapped["VolumeGroup"] = relationship(
+        back_populates="segments")
+    host: Mapped["Host"] = relationship(back_populates="segments")
+    __table_args__ = (
+        UniqueConstraint('logical_volume_id_fk', 'physical_volume_id_fk', 'volume_group_id_fk', 'host_id_fk',
+                         name='unique_LV_PV_VG_SEGMENT_per_host'),
+    )
 
 
 class FileSystem(Base):
@@ -192,7 +210,7 @@ class LogicalVolumeInfo(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     lv_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, unique=True)
+        String(255), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
 
@@ -205,18 +223,19 @@ class LogicalVolume(Base):
     __tablename__ = "logical_volume"
     # info
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    lv_uuid: Mapped[str] = mapped_column(String(255), nullable=False)
+    lv_uuid: Mapped[str] = mapped_column(
+        String(255), nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
     logical_volume_info_id_fk: Mapped[int] = mapped_column(ForeignKey(
-        "logical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, unique=True)
+        "logical_volume_info.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     priority_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "priority.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     info: Mapped["LogicalVolumeInfo"] = relationship(
         "LogicalVolumeInfo", back_populates="logical_volume")
-    stats: Mapped["LogicalVolumeStats"] = relationship(
+    stats: Mapped[List["LogicalVolumeStats"]] = relationship(
         "LogicalVolumeStats", back_populates="logical_volume")
     adjustmens: Mapped[List["Adjustment"]
                        ] = relationship("Adjustment", back_populates="logical_volume")
