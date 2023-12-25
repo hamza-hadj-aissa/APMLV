@@ -69,7 +69,7 @@ class LogicalVolumeModel():
 
     def train_model(self, n_epochs: int, lr: float, batch_size: int):
         train_data, test_data = self.__data_preprocessing(
-            features=["used_space"]
+            features=["file_system_used_size"]
         )
 
         train_dataset = TimeSeriesDataset(*train_data)
@@ -110,14 +110,15 @@ class LogicalVolumeModel():
 
     def __create_sequences(self, dataframe, n_steps):
         for i in range(1, n_steps+1):
-            dataframe[f"used_space(t-{i})"] = dataframe["used_space"].shift(i)
+            dataframe[f"file_system_used_size(t-{i})"] = dataframe["file_system_used_size"].shift(
+                i)
         dataframe.dropna(inplace=True)
         return dataframe
 
     def __data_preprocessing(self, features):
         # set index as timestamps
         self.df.index = pd.to_datetime(
-            self.df['date'], format='%Y-%m-%d %H:%M:%S')
+            self.df['created_at'], format='%Y-%m-%d %H:%M:%S')
         # select features
         df = self.df[features].copy()
 
@@ -127,7 +128,7 @@ class LogicalVolumeModel():
         df_sequence = self.__create_sequences(df, self.lookback)
         # scaling
         df_to_np = df_sequence.to_numpy()
-        # Scaling "used_space"
+        # Scaling "file_system_used_size"
         df_scaled = self.scaler.fit_transform(df_to_np)
         x = dc(np.flip(df_scaled[:, 1:], axis=1))
         y = df_scaled[:, 0]
@@ -248,8 +249,8 @@ class LogicalVolumeModel():
         zerros_array = np.ones(offset) * np.nan
 
         # extract datetime for x axis
-        x_axis = self.df[["date"]].iloc[self.lookback:].iloc[split_index -
-                                                             offset:split_index+offset].to_numpy()
+        x_axis = self.df[["created_at"]].iloc[self.lookback:].iloc[split_index -
+                                                                   offset:split_index+offset].to_numpy()
         x_axis = np.flip(x_axis.flatten())
         datetime_values = [datetime.datetime.strptime(
             dt_str, '%Y-%m-%d %H:%M:%S') for dt_str in x_axis]
