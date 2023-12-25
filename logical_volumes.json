@@ -1,21 +1,42 @@
 {
-    "volume_groups": [
+    "hosts": [
         {
-            "vg_name": "vg1",
-            "logical_volumes": [
+            "hostname": "bob@192.168.1.76",
+            "volume_groups": [
                 {
-                    "lv_name": "lvol1"
+                    "vg_name": "vg1",
+                    "logical_volumes": [
+                        {
+                            "lv_name": "lv1"
+                        },
+                        {
+                            "lv_name": "lv2"
+                        }
+                    ],
+                    "physical_volumes": [
+                        {
+                            "pv_name": "/dev/sda1"
+                        },
+                        {
+                            "pv_name": "/dev/sda2"
+                        }
+                    ]
                 },
                 {
-                    "lv_name": "lv2"
-                }
-            ]
-        },
-        {
-            "vg_name": "vg2",
-            "logical_volumes": [
-                {
-                    "lv_name": "lv3"
+                    "vg_name": "vg2",
+                    "logical_volumes": [
+                        {
+                            "lv_name": "lv3"
+                        }
+                    ],
+                    "physical_volumes": [
+                        {
+                            "pv_name": "/dev/sdb1"
+                        },
+                        {
+                            "pv_name": "/dev/sdb2"
+                        }
+                    ]
                 }
             ]
         }

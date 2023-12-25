@@ -167,3 +167,4 @@ cython_debug/
 
 .vscode/
 prediction/dataset/logical_volume_usage_history.csv
+ansible/inventory

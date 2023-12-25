@@ -1,0 +1,46 @@
+- name: Gather LVM informations
+  hosts: all
+  become: true
+  tasks:
+      # Gather LV facts
+      - name: Extract Logical volume informationss
+        ansible.builtin.command: lvs {{ logical_volumes }} -o lv_uuid,lv_name,vg_name,vg_uuid,lv_size,seg_size,seg_le_ranges,lv_path --units m --reportformat json
+        register: lvs_info
+        # changed_when: true
+        ignore_errors: true
+
+      - name: Extract Logical volume filesystem informations
+        ansible.builtin.command: lsblk {{ logical_volumes }} -o NAME,FSTYPE,FSSIZE,FSUSED,FSAVAIL,MOUNTPOINT --bytes --json
+        register: lv_fs_info
+        # changed_when: true
+        ignore_errors: true
+
+      # Gather VG facts
+      - name: Gather VG facts
+        ansible.builtin.command: vgs {{ volume_groups }} -o vg_uuid,vg_name,vg_size,vg_free,pv_name --units m --reportformat json
+        register: vgs_info
+        # changed_when: true
+        ignore_errors: true
+
+      # Gather PV facts
+      - name: Gather PV facts
+        ansible.builtin.command: pvs {{ physical_volumes }} -o pv_uuid,pv_name,pv_size,pv_free,pv_used,vg_uuid --units m --reportformat json
+        register: pvs_info
+        # changed_when: true
+        ignore_errors: true
+
+      # Display the gathered informations
+      - name: Display gathered informations
+        ansible.builtin.debug:
+            msg: >
+                {{
+                  {
+                    'host': ansible_host,
+                    'LVs': lvs_info.stdout | from_json,
+                    'VGs': vgs_info.stdout | from_json,
+                    'PVs': pvs_info.stdout | from_json,
+                    'lsblk': lv_fs_info.stdout | from_json
+                  } | to_nice_json
+                }}
+        # changed_when: true
+        ignore_errors: true
