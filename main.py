@@ -47,34 +47,34 @@ def scrape_lvm_stats(session: Session, lvm_logger: Logger, ansible_logger: Logge
         # remove empty lines
         hosts_passwords = [line.strip()
                            for line in f if line.strip().split(" ")[0] in hosts]
-        # Iterate over the hosts
-        for host_password in hosts_passwords:
-            # Extract lvm informations from the host
-            try:
-                host_informations = extract_lvm_informations_from_host(
-                    ansible_logger=ansible_logger,
-                    playbook=f"{root_directory}/ansible/playbooks/extract_lvm_data.yml",
-                    host=host_password,
-                    extravars={
-                        'logical_volumes': " ".join([f'/dev/mapper/{vg["vg_name"]}-{lv["lv_name"]}' for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for lv in vg["logical_volumes"]]),
-                        'volume_groups': " ".join([vg['vg_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"]]),
-                        'physical_volumes': " ".join(pv['pv_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for pv in vg["physical_volumes"])
-                    }
-                )
-                print(host_informations)
-                # Transform the lvm informations to a dataframe
-                hostname, lvm_dataframe = transform_lvm_data_to_dataframe(
-                    host_informations
-                )
-                # Insert the lvm dataframe to the database
-                insert_lvm_data_to_database(session, hostname, lvm_dataframe)
-            except Exception as e:
-                if isinstance(e, KeyboardInterrupt):
-                    raise KeyboardInterrupt
-                else:
-                    ansible_logger.get_logger().error(e)
-                    hosts.remove(host_password.split(" ")[0])
-                    continue
+    # Iterate over the hosts
+    for host_password in hosts_passwords:
+        # Extract lvm informations from the host
+        try:
+            host_informations = extract_lvm_informations_from_host(
+                ansible_logger=ansible_logger,
+                playbook=f"{root_directory}/ansible/playbooks/extract_lvm_data.yml",
+                host=host_password,
+                extravars={
+                    'logical_volumes': " ".join([f'/dev/mapper/{vg["vg_name"]}-{lv["lv_name"]}' for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for lv in vg["logical_volumes"]]),
+                    'volume_groups': " ".join([vg['vg_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"]]),
+                    'physical_volumes': " ".join(pv['pv_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for pv in vg["physical_volumes"])
+                }
+            )
+            print(host_informations)
+            # Transform the lvm informations to a dataframe
+            hostname, lvm_dataframe = transform_lvm_data_to_dataframe(
+                host_informations
+            )
+            # Insert the lvm dataframe to the database
+            insert_lvm_data_to_database(session, hostname, lvm_dataframe)
+        except Exception as e:
+            if isinstance(e, KeyboardInterrupt):
+                raise KeyboardInterrupt
+            else:
+                ansible_logger.get_logger().error(e)
+                hosts.remove(host_password.split(" ")[0])
+                continue
     # process the volume groups
     hosts_allocations = []
     for host in hosts:
