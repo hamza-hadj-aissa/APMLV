@@ -30,11 +30,21 @@ def parse_segment_ranges(df: pd.DataFrame):
 # and convert the size to int
 def parse_size_number(size):
     # 1024.00m --> 1024
-    size = str(size).replace(SIZE_UNIT, "")
-    return math.ceil(double(size))
+    if isinstance(size, float) or isinstance(size, double):
+        return math.c(size)
 
+    if size.endswith(SIZE_UNIT):
+        size = size[:-1]
+    # Convert to integer and round up
+    try:
+        size_int = math.ceil(float(size))
+    except ValueError:
+        raise ValueError(f"Invalid size string: {size}")
 
+    return size_int
 # convert bytes to mib
+
+
 def convert_bytes_to_mib(bytes_size: int):
     # 1 MiB = 1024 KiB = 1048576 B
     return bytes_size / (1024 ** 2)
