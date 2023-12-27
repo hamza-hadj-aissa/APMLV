@@ -3,11 +3,18 @@
 The project aims to develop a system that balances logical volumes. The status of the logical volumes on the machine will be extracted at regular intervals and saved into an SQL database. This data will then be analyzed using machine learning to predict future usage of each logical volume. Based on these predictions, the system will adjust the sizes of the logical volumes accordingly to optimize usage and performance.
 
 ## Table of Contents
-- [Logical volumes usage prediction using LSTM Recurrent Networks](#lvm)
--   [Project Prerequisites](#prerequisites)
--   [Installation](#installation)
--   [Configuration](#configuration)
--   [Usage](#usage)
+- [Project Prerequisites](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#prerequisites)
+- [Installation](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#installation)
+- [Configuration](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#configuration)
+  - [Ansible configuration](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#ansible-configuration)
+- [Project overview](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#project-overview)
+  - [Logical volumes future usage prediction using LSTM Recurrent Networks](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#logical-volumes-future-usage-prediction-using-lstm-recurrent-networks)
+  - [Model usage](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#model-usage)
+  - [Training the model](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#training-the-model)
+  - [Database schema](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#database-schema)
+  - [Supported filesystems](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#supported-filesystems)
+- [Workflow](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#workflow)
+- [Logging](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#logging)
 
 ## Prerequisites
 Before running the project, make sure the following software and dependencies are installed on your machine:
@@ -111,7 +118,7 @@ LSTM networks are a special kind of Recurrent Neural Network (RNN) that can lear
 * **Scalability:** The LSTM model can be scaled to handle larger datasets and adapt to evolving storage usage patterns. (*It's essential to approach scaling with caution to ensure proper handling of the model* ). Related article: [Incremental Ensemble LSTM Model towards Time Series Data](https://www.sciencedirect.com/science/article/abs/pii/S0045790621001592)
 
 
-### Usage of the model in lvm_balancer
+### Model usage
 The LSTM-based prediction model in lvm_balancer leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
 #### Decision-making Process
 
@@ -198,6 +205,7 @@ Logs are categorized into three types:
 
 -   Postgres (database-related)
 -   LVM (LVM related commands),
+-   Ansible (Ansible playbooks)
 -   Main (main script logs).
 
 You can find log messages in the console and adjust logging settings in the logs/Logger.py file.
