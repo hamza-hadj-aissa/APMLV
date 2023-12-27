@@ -9,6 +9,7 @@ from database.models import (
     FileSystem,
     Host,
     LogicalVolumeStats,
+    MountPoint,
     PhysicalVolumeStats,
     SegmentStats,
     VolumeGroup,
@@ -176,6 +177,16 @@ def insert_or_get_file_system(session: Session, file_system_type: str) -> FileSy
     return file_system
 
 
+# Helper function to get or insert filesystem type
+def insert_or_get_mount_point(session: Session, path: str) -> MountPoint:
+    mount_point: MountPoint = session.query(MountPoint).filter_by(
+        path=path).first()
+    if mount_point is None:
+        mount_point = MountPoint(path=path)
+        session.add(mount_point)
+    return mount_point
+
+
 # Function to insert logical volume adjustments into the database
 def insert_to_logical_volume_adjustment(session: Session, db_logger: Logger, hostname: str, adjustments: list[dict[str, int | str]]):
     with session.begin_nested():
@@ -336,7 +347,7 @@ def transform_lvm_data_to_dataframe(host_informations: dict) -> tuple[str, pd.Da
     merge_pv_vg_lv_fs = pd.merge(
         merge_pv_vg,
         lvs_fs[['lv_uuid', 'lv_name', 'vg_uuid', 'lv_size', 'priority', 'seg_size', 'segment_range_start',
-                'segment_range_end', 'lv_path', 'name', 'fstype', 'fssize', 'fsused', 'fsavail']],
+                'segment_range_end', 'lv_path', 'name', 'fstype', 'fssize', 'fsused', 'fsavail', 'mountpoint']],
         how="inner",
         on="vg_uuid"
     )
@@ -395,6 +406,9 @@ def insert_logical_volume_and_stats(session: Session, lv_data: pd.DataFrame, hos
         file_system_available_size=lv_data['fsavail'],
         file_system=insert_or_get_file_system(
             session=session, file_system_type=lv_data['fstype']
+        ),
+        mount_point=insert_or_get_mount_point(
+            session=session, path=lv_data['mountpoint']
         )
     )
 
@@ -421,6 +435,8 @@ def insert_physical_volume_and_stats(session: Session, pv_data: pd.DataFrame, ho
     # Create physical volume stats object
     physical_volume_stats = PhysicalVolumeStats(
         pv_size=pv_data["pv_size"],
+        pv_free=pv_data["pv_free"],
+        pv_used=pv_data["pv_used"]
     )
 
     # Associate physical volume stats with the physical volume
@@ -441,7 +457,7 @@ def insert_volume_group_and_stats(session: Session, vg_data: pd.DataFrame, host_
     # Create volume group stats object
     volume_group_stats: VolumeGroupStats = VolumeGroupStats(
         vg_size=vg_data["vg_size"],
-        vg_free=vg_data["vg_free"]
+        vg_free=vg_data["vg_free"],
     )
     # Associate volume group stats with the volume group
     volume_group_stats.volume_group = volume_group
@@ -465,19 +481,21 @@ def insert_lvm_data_to_database(session: Session, hostname: str, lvm_dataframe: 
                 logical_volume: LogicalVolume = insert_logical_volume_and_stats(
                     session=session,
                     lv_data=row[['lv_uuid', 'lv_name', 'priority',
-                                 'fssize', 'fsused', 'fsavail', 'fstype']],
+                                 'fssize', 'fsused', 'fsavail', 'fstype', 'mountpoint']],
                     host_id=host.id
                 )
                 # Insert the physical volume and its stats
                 physical_volume: PhysicalVolume = insert_physical_volume_and_stats(
                     session=session,
-                    pv_data=row[['pv_uuid', 'pv_name', 'pv_size']],
+                    pv_data=row[['pv_uuid', 'pv_name',
+                                 'pv_size', 'pv_used', 'pv_free']],
                     host_id=host.id
                 )
                 # Insert the volume group and its stats
                 volume_group: VolumeGroup = insert_volume_group_and_stats(
                     session=session,
-                    vg_data=row[['vg_uuid', 'vg_name', 'vg_size', 'vg_free']],
+                    vg_data=row[['vg_uuid', 'vg_name',
+                                 'vg_size', 'vg_free', 'pv_used']],
                     host_id=host.id
                 )
                 # Insert or update the segment

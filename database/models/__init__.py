@@ -78,6 +78,8 @@ class PhysicalVolumeStats(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # stats
     pv_size: Mapped[int] = mapped_column(nullable=False)
+    pv_free: Mapped[int] = mapped_column(nullable=False)
+    pv_used: Mapped[int] = mapped_column(nullable=False)
     created_at: Mapped[DateTime] = mapped_column(DateTime,
                                                  nullable=False, default=func.now())
     # Foreign keys
@@ -183,6 +185,19 @@ class FileSystem(Base):
                                  ] = relationship("LogicalVolumeStats", back_populates="file_system")
 
 
+class MountPoint(Base):
+    __tablename__ = "mount_point"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    path: Mapped[str] = mapped_column(nullable=False)
+    created_at: Mapped[DateTime] = mapped_column(DateTime,
+                                                 nullable=False, default=func.now())
+
+    # Relationships
+    logical_volume_stats: Mapped[List["logical_volume_stats"]] = relationship(
+        "LogicalVolumeStats", back_populates="mount_point")
+
+
 class LogicalVolumeStats(Base):
     __tablename__ = "logical_volume_stats"
 
@@ -196,11 +211,15 @@ class LogicalVolumeStats(Base):
     # Foreign keys
     file_system_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "file_system.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+    mount_point_id_fk: Mapped[int] = mapped_column(ForeignKey(
+        "mount_point.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     logical_volume_id_fk: Mapped[int] = mapped_column(ForeignKey(
         "logical_volume.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
     # Relationships
     file_system: Mapped[List["FileSystem"]] = relationship(
         "FileSystem", back_populates="logical_volume_stats")
+    mount_point: Mapped[List["MountPoint"]] = relationship(
+        "MountPoint", back_populates="logical_volume_stats")
     logical_volume: Mapped[List["LogicalVolume"]
                            ] = relationship("LogicalVolume", back_populates="stats")
 
