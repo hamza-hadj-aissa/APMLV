@@ -171,4 +171,6 @@ ansible/inventory
 prediction/figures/*.png
 prediction/models/
 prediction/scalers/
-prediction/dummy/
+prediction/dummy/figures/*
+prediction/dummy/models/*
+prediction/dummy/scalers/*
