@@ -1,0 +1,52 @@
+---
+- name: Create Logical Volumes
+  hosts: all
+  become: true
+  vars:
+      logical_volumes:
+          - vg_name: vg1
+            lv_name: lv1
+            mountpoint: /home/bob/Desktop/lvm/vg1/lv1
+            file_system_type: xfs
+            size: 500M
+          - vg_name: vg1
+            lv_name: lv2
+            mountpoint: /home/bob/Desktop/lvm/vg1/lv2
+            file_system_type: xfs
+            size: 500M
+          - vg_name: vg2
+            lv_name: lv3
+            mountpoint: /home/bob/Desktop/lvm/vg2/lv3
+            file_system_type: xfs
+            size: 500M
+          - vg_name: vg2
+            lv_name: lv4
+            mountpoint: /home/bob/Desktop/lvm/vg2/lv4
+            file_system_type: xfs
+            size: 500M
+
+  tasks:
+      - name: Unmount the logical volume "{{ item.lv_name }}"
+        ansible.posix.mount:
+            path: "/dev/mapper/{{ item.vg_name }}-{{ item.lv_name }}"
+            state: unmounted
+        loop: "{{ logical_volumes }}"
+
+      - name: Remove LVs
+        ansible.builtin.command: lvremove -f -y {{item.vg_name}}
+        loop: "{{ logical_volumes }}"
+        register: vg_result
+
+      # - name: Format and mount the LVs
+      #   ansible.builtin.filesystem:
+      #       fstype: "{{ item.file_system_type }}"
+      #       dev: "/dev/{{ item.vg_name }}/{{ item.lv_name }}"
+      #       opts: defaults
+      #   loop: "{{ logical_volumes }}"
+      #   register: fs_result
+
+      # - name: Ensure mountpoints exist
+      #   ansible.builtin.file:
+      #       path: "{{ item.item.mountpoint }}"
+      #       state: directory
+      #   loop: "{{ vg_result.results }}"
