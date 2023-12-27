@@ -22,7 +22,7 @@ def generate_volume_data(total_capacity, previous_used_space, is_spike):
 
 
 # Function to generate usage history for a logical volume
-def generate_usage_history(volume_id, volume_name, fstype, priority, disks_capacity, previous_used_space, number_of_minutes, spike_hour):
+def generate_usage_history(uuid, lv_id, volume_name, fstype, mount_point, priority, disks_capacity, previous_used_space, number_of_minutes, spike_hour):
     history = []
     current_date = datetime.now()
 
@@ -32,11 +32,13 @@ def generate_usage_history(volume_id, volume_name, fstype, priority, disks_capac
             disks_capacity, previous_used_space, is_spike)
 
         entry = {
-            "uuid": volume_id,
+            "uuid": uuid,
+            "logical_volume_id": lv_id,
             "name": volume_name,
             "created_at": current_date.strftime("%Y-%m-%d %H:%M:%S"),
-            "fstype": fstype,
             "priority": priority,
+            "fstype": fstype,
+            "mount_point": mount_point,
             "file_system_size": disks_capacity,
             "file_system_available_size": free_space,
             "file_system_used_size": used_space
@@ -53,10 +55,12 @@ def generate_usage_history(volume_id, volume_name, fstype, priority, disks_capac
 def write_to_csv(data, filename):
     with open(filename, mode='w', newline='') as file:
         fieldnames = ["uuid",
+                      "logical_volume_id",
                       "name",
                       "created_at",
                       "fstype",
                       "priority",
+                      "mount_point",
                       "file_system_size",
                       "file_system_available_size",
                       "file_system_used_size"]
@@ -73,16 +77,22 @@ if __name__ == "__main__":
     number_of_lv = 3
     # disks_capacities = [random.randint(
     #     1000, 90000) for _ in range(number_of_lv)]
-    uuids = ["uhm1nh-2vMt-dnoD-PP2d-rzf1-a4a6-L2qeK6",
-             "9hOesi-wjoe-Ezy1-2kx0-Qk1b-7cWa-nlWOOk",
-             "KBiXh4-FbYI-N7SF-yhA9-hWGj-1Teg-wGWCyg"]
-    priorities = [6, 5, 5]
-    ids = [1, 2, 3]
-    for index, disk_capacity in enumerate([974, 974, 974]):
-        volume_id = uuids[index]
+    uuids = [
+        "kBHN6m-Rjk6-o0YS-j5rw-O5a8-zx47-NdfUOV",
+        "6kC4RB-YmIQ-XT2Y-zKuK-vDhB-ACTf-1vTcDM",
+        "WQq3J9-GZNm-sLaa-PrV1-JO2H-UsIm-1lVZ6p",
+        "IMUZO6-dxCS-01Sy-k4sg-8yLm-Q35Q-IArvVk",
+        "ZTPRAX-O9Ii-xAU1-A2bY-bhHc-qO2f-efnUVK"
+    ]
+
+    priorities = [4, 4, 5, 6, 6]
+    ids = [1, 2, 3, 4, 5]
+    mountpoints = [51, 52, 53, 54, 55]
+    for index, disk_capacity in enumerate([452, 452, 500, 452, 281]):
+        uuid = uuids[index]
         volume_name = f"lv{index + 1}"
         volume_history = generate_usage_history(
-            volume_id, volume_name, 1, priorities[index], disk_capacity, previous_used_space=random.randint(0, disk_capacity), number_of_minutes=60*24*30*12, spike_hour=random.randint(1, 10*6*24))
+            uuid, index+1, volume_name, index+1, index+1, priorities[index], disk_capacity, previous_used_space=random.randint(0, disk_capacity), number_of_minutes=60*24*30*12, spike_hour=random.randint(1, 10*6*24))
         dataset.extend(volume_history)
 
     write_to_csv(
