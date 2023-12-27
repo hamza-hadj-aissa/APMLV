@@ -1,6 +1,7 @@
 import json
 import schedule
 import torch
+from ansible.resize import adjust_logical_volumes
 from ansible.extract import extract_lvm_informations_from_host
 from database.connect import DB_NAME, connect_to_database
 from database.utils import insert_lvm_data_to_database, insert_to_logical_volume_adjustment, transform_lvm_data_to_dataframe
@@ -61,7 +62,6 @@ def scrape_lvm_stats(session: Session, lvm_logger: Logger, ansible_logger: Logge
                     'physical_volumes': " ".join(pv['pv_name'] for host in logical_volumes_json["hosts"] for vg in host["volume_groups"] for pv in vg["physical_volumes"])
                 }
             )
-            print(host_informations)
             # Transform the lvm informations to a dataframe
             hostname, lvm_dataframe = transform_lvm_data_to_dataframe(
                 host_informations
@@ -97,7 +97,7 @@ def scrape_lvm_stats(session: Session, lvm_logger: Logger, ansible_logger: Logge
         insert_to_logical_volume_adjustment(
             session, db_logger, hostname, logical_volumes_adjustments_sizes
         )
-    # execute_logical_volumes_sizes_adjustments(session, lvm_logger)
+    execute_logical_volumes_sizes_adjustments(session, lvm_logger)
     session.close()
 
 
@@ -117,13 +117,37 @@ def process_host(session: Session, lvm_logger: Logger, volume_groups: list[dict]
 
 
 def execute_logical_volumes_sizes_adjustments(session: Session, lvm_logger: Logger):
-    adjustments = session.query(Adjustment).filter_by(status="pending").all()
-    for adjustment in adjustments:
+    # {
+    #     "vg_name": "vg1",
+    #     "lv_name": "lv1",
+    #     "mountpoint": "/home/bob/Desktop/lvm/vg1/lv1",
+    #     "file_system_type": "ext2",
+    #     "size": "+100M"
+    # },
+    rows = session.query(Adjustment)\
+        .filter_by(status="pending")\
+        .join(LogicalVolume)\
+        .join(Segment)\
+        .join(Host)\
+        .all()
+    for row in rows:
+        logical_volume_dict = {
+            "vg_name": row.logical_volume.segments[0].volume_group.info.vg_name,
+            "lv_name": row.logical_volume.info.lv_name,
+            "file_system_type": row.logical_volume.stats[-1].file_system.file_system_type,
+            "mountpoint":  row.logical_volume.stats[-1].mount_point.path,
+            "size": f"{row.size}M"
+        }
         lvm_logger.get_logger().debug(
-            f"Making adjustment for {adjustment.logical_volume.info.lv_name}: {adjustment.size}")
-        adjustment.status = "done"
-        session.add(adjustment)
-        session.commit()
+            f"Making adjustment for {row.logical_volume.info.lv_name}: {row.size}"
+        )
+        adjust_logical_volumes(
+            hostname=row.logical_volume.segments[0].host.hostname,
+            logical_volume=logical_volume_dict
+        )
+        row.status = "done"
+        session.add(row)
+    session.commit()
 
 
 def get_logical_volumes_info_list(session: Session, hostname: str, vg_uuid: str, logical_volumes: list[dict[str, str]], lv_stats_limit):
@@ -460,8 +484,6 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
         if allocation_reclaim_size < 0:
             # logical volume prediction < file system size
             # giving up volume
-            print(twenty_percent_of_prediction,
-                  mean_proportion, twenty_percent_of_prediction)
             # logical volume future size
             size = int(np.round(
                 (twenty_percent_of_prediction * mean_proportion) + twenty_percent_of_prediction))
@@ -518,7 +540,7 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
         )
         logical_volumes_adjustments_sizes.append(
             {"lv_uuid": logical_volume_informations["lv_uuid"],
-                "size": logical_volumes_adjustment_size}
+                "size": logical_volume_future_size}
         )
         lvm_logger.get_logger().debug(
             f"Allocation volume size with max limited allocation of {allocation_volume} MiB: {logical_volumes_adjustment_size} MiB"
@@ -531,14 +553,11 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
         "----------------------------------------------------------------------------------")
     return logical_volumes_adjustments_sizes
 
-# FIXME: Handle column_sums equal to 0
-# FIXME: Handle model load
-
 
 if __name__ == "__main__":
     # expressed in seconds
     # 60 * 5 = 5 minutes
-    time_interval = 5
+    time_interval = 15
     log_file_path = f"{root_directory}/logs/lvm_balancer.log"
     # define loggers
     db_logger = Logger("Postgres", path=log_file_path)
