@@ -523,6 +523,7 @@ def get_logical_volumes_list_per_volume_group_per_host(session: Session, hostnam
     with session.begin_nested():
         rows = session.query(LogicalVolume, VolumeGroup, VolumeGroupInfo, LogicalVolumeInfo)\
             .join(LogicalVolumeInfo)\
+            .filter(LogicalVolumeInfo.lv_name.in_(logical_volumes_names))\
             .join(Segment)\
             .join(Host)\
             .filter_by(hostname=hostname)\
