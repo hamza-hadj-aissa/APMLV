@@ -1,7 +1,7 @@
-import random
+from re import S
+import numpy as np
 import pandas as pd
 from psycopg import IntegrityError
-from sklearn.calibration import log
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import Session
 from database.helpers import convert_bytes_to_mib, parse_segment_ranges, parse_size_number
@@ -24,6 +24,8 @@ from database.models import (
     VolumeGroupStats
 )
 from logs.Logger import Logger
+from connect import connect
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class DuplicateRowError(Exception):
@@ -188,10 +190,10 @@ def insert_or_get_mount_point(session: Session, path: str) -> MountPoint:
 
 
 # Function to insert logical volume adjustments into the database
-def insert_to_logical_volume_adjustment(session: Session, db_logger: Logger, hostname: str, adjustments: list[dict[str, int | str]]):
+def insert_to_logical_volume_adjustment(session: Session, db_logger: Logger, hostname: str, volume_group_adjustments: list[dict]) -> list[int]:
     with session.begin_nested():
         try:
-            for index, adjustment in enumerate(adjustments):
+            for index, adjustment in enumerate(volume_group_adjustments):
                 lv_uuid = adjustment["lv_uuid"]
                 # Query the logical volume based on UUID and hostname
                 logical_volume: LogicalVolume = session.query(LogicalVolume)\
@@ -205,13 +207,19 @@ def insert_to_logical_volume_adjustment(session: Session, db_logger: Logger, hos
                 new_adjustment = Adjustment(
                     size=size,
                     extend=size >= 0,
-                    logical_volume=logical_volume
+                    logical_volume_id_fk=logical_volume.id
                 )
                 session.add(new_adjustment)
             session.commit()
         except IntegrityError as e:
             db_logger.get_logger().error(e)
             session.rollback()
+            return []
+        except SQLAlchemyError as e:
+            db_logger.get_logger().error(e)
+            session.rollback()
+            return []
+    return [adjustment.id for adjustment in session.query(Adjustment).order_by(Adjustment.created_at.desc()).limit(len(volume_group_adjustments)).all()]
 
 
 # create a dataframe from the pvs information
@@ -314,17 +322,11 @@ def transform_lvs_lsblk_data_to_dataframe(lvs: pd.DataFrame, lsblk: pd.DataFrame
         left_on='lv_path',
         right_on='name'
     )
-    # assign a random priority to each logical volume
-    # TODO: Add functionality to assign priority manually
-    merged_df['priority'] = merged_df.apply(
-        lambda row: random.randint(1, 6), axis=1
-    )
-
     return merged_df
 
 
 # Parse the host information into dataframes
-def transform_lvm_data_to_dataframe(host_informations: dict) -> tuple[str, pd.DataFrame]:
+def transform_lvm_data_to_dataframe(host_informations: dict, priorities: map) -> tuple[str, pd.DataFrame]:
     # Extract the hostname from the host information
     hostname = host_informations['host']
     # Extract the LVM information from the host information
@@ -336,6 +338,8 @@ def transform_lvm_data_to_dataframe(host_informations: dict) -> tuple[str, pd.Da
         tranform_lvs_data_to_dataframe(lvm_informations['LVs']),
         tranform_lsblk_data_to_dataframe(lvm_informations['lsblk'])
     )
+    # Assign priority based on lv_name from the merged DataFrame
+    lvs_fs['priority'] = lvs_fs['lv_name'].map(priorities)
     # Merge the DataFrames
     merge_pv_vg = pd.merge(
         vgs[['vg_uuid', 'vg_name', 'vg_size', 'vg_free']],
@@ -387,6 +391,7 @@ def insert_or_update_segment(session: Session, logical_volume: LogicalVolume, ph
     )
     new_segment_stats.segment = segment
     session.add(new_segment_stats)
+    return segment
 
 
 # Function to insert a logical volume and its stats in the database
@@ -512,3 +517,73 @@ def insert_lvm_data_to_database(session: Session, hostname: str, lvm_dataframe: 
             # Handle any other unexpected errors
             session.rollback()
             raise ValueError(f"Error: {e}")
+
+
+def get_logical_volumes_list_per_volume_group_per_host(session: Session, hostname: str, vg_name: str, logical_volumes_names: list[str], lv_stats_limit: int):
+    with session.begin_nested():
+        rows = session.query(LogicalVolume, VolumeGroup, VolumeGroupInfo, LogicalVolumeInfo)\
+            .join(LogicalVolumeInfo)\
+            .join(Segment)\
+            .join(Host)\
+            .filter_by(hostname=hostname)\
+            .join(VolumeGroup)\
+            .join(VolumeGroupInfo)\
+            .filter_by(vg_name=vg_name)\
+            .order_by(VolumeGroupInfo.vg_name.asc())\
+            .all()
+        if len(rows) == 0:
+            raise ValueError(
+                f"No logical volumes found for volume group {vg_name} on host {hostname}")
+        else:
+            volume_groups_informations = {
+                'hostname': hostname,
+                'vg_name': rows[0].VolumeGroupInfo.vg_name,
+                'vg_uuid': rows[0].VolumeGroup.vg_uuid,
+                'vg_free': rows[0].VolumeGroup.stats[-1].vg_free,
+            }
+            logical_volumes_informations_list = []
+            for row in rows:
+                # get latest (depends on the number of the lookbacks) stats of one logical volumes
+                if lv_stats_limit == 0:
+                    lv_stat = session.query(LogicalVolumeStats).filter_by(
+                        logical_volume_id_fk=row.LogicalVolume.id)\
+                        .order_by(LogicalVolumeStats.created_at.desc())\
+                        .limit(1)\
+                        .all()
+                else:
+                    lv_stat = session.query(LogicalVolumeStats)\
+                        .filter_by(logical_volume_id_fk=row.LogicalVolume.id)\
+                        .order_by(LogicalVolumeStats.created_at.desc())\
+                        .limit(lv_stats_limit)\
+                        .all()
+
+                if len(lv_stat) > 0:
+                    # array of latest logical_volume fs usage
+                    lv_fs_usage = [
+                        stat.file_system_used_size for stat in lv_stat]
+                    # # append the mean value | array has to be of 7 entries for the scaling
+                    # # it is gonna be ignored during prediction
+                    # lv_fs_usage.append(sum(lv_fs_usage) / len(lv_fs_usage))
+
+                    # to reshaped numpy array
+                    lv_fs_usage_allocation_reclaim_size = np.array(
+                        # flip the order of the usage serie
+                        # newest usage volume is at the end of the list (array)
+                        np.flip(lv_fs_usage)
+                    ).flatten()
+
+                    # create a dictionary for each logical volume
+                    lv_data = {
+                        'lv_uuid': row.LogicalVolume.lv_uuid,
+                        'lv_name': row.LogicalVolume.info.lv_name,
+                        'priority': row.LogicalVolume.priority.value,
+                        'file_system_size': lv_stat[0].file_system_size,
+                        'file_system_type': lv_stat[0].file_system.file_system_type,
+                        # Convert numpy array to list
+                        'usage_serie': lv_fs_usage_allocation_reclaim_size.tolist(),
+                    }
+                    # add the dictionary to the list
+                    logical_volumes_informations_list.append(lv_data)
+            # add the list of logical volumes to the dictionary
+            volume_groups_informations['logical_volumes'] = logical_volumes_informations_list
+            return volume_groups_informations
