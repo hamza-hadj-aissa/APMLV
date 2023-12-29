@@ -1,32 +1,31 @@
 import json
 from ansible.extract import AnsibleException
+from logs.Logger import Logger
 from root_directory import root_directory
 from ansible_runner import run
 
 
 # TODO: Handle the output of the adjust_logical_volumes.yml playbook
 # TODO: Save the result of each adjustment in the database
-
-
-def adjust_logical_volumes(hostname: str, logical_volume: dict):
+def adjust_logical_volume(ansible_logger: Logger, hostname: str, volume_group: dict):
     with open(f"{root_directory}/ansible/inventory", 'r') as f:
         # remove empty lines
         hosts_passwords = [line.strip()
                            for line in f if line.strip().split(" ")[0] == hostname]
     if len(hosts_passwords) == 0:
-        print("Host not found")
+        ansible_logger.get_logger().warning("Host not found")
         return
     else:
         # Run the playbook
         r = run(
             # Path to the playbook
-            playbook=f"{root_directory}/ansible/playbooks/resize_logical_volume.yml",
+            playbook=f"{root_directory}/ansible/playbooks/adjust_volume_group.yml",
             # Target hosts
             inventory="".join(hosts_passwords),
             # list of logical volumes to adjust
             extravars={
                 "host": hosts_passwords[0],
-                "logical_volume": logical_volume,
+                "volume_group": volume_group,
             },
             # quiet=True,
             # json_mode=True
@@ -35,19 +34,18 @@ def adjust_logical_volumes(hostname: str, logical_volume: dict):
         lvm_informations = {}
         # Check if the playbook failed to execute for the host
         if any(event['event'] == 'runner_on_unreachable' for event in r.events):
-            print(
+            ansible_logger.get_logger().warn(
                 f"Failed to extract lvm informations from ({hostname})")
             raise AnsibleException(
                 message=f"Failed to connect to host ({hostname}). Check your SSH connection or host settings.")
 
-        print(
+        ansible_logger.get_logger().info(
             f"Extraction of lvm informations from ({hostname}) completed.")
         # Parse the output and extract the informations
         for each_host_event in r.events:
             # Check if the event is a runner_on_ok or runner_on_failed
             if each_host_event['event'] in ['runner_on_ok', 'runner_on_failed']:
                 # Check if the task is "Display gathered informations"
-                # print(each_host_event['event_data'])
                 if (each_host_event['event_data']['task'] == "Display gathered informations" and each_host_event['event'] == "runner_on_ok"):
                     # Parse the output
                     output_json = json.loads(
@@ -106,7 +104,7 @@ logical_volumes = {
 }
 
 if __name__ == "__main__":
-    adjust_logical_volumes(
+    adjust_logical_volume(
         "bob@192.168.1.76",
         logical_volume={
             "vg_name": "vg2",

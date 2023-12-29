@@ -1,0 +1,10 @@
+- name: Adjusting LVs in the {{ volume_group.vg_name }}
+  hosts: "{{ host }}"
+  become: true
+  tasks:
+      - name: Iterating over Logical volumes
+        ansible.builtin.include_tasks:
+            file: resize_logical_volume.yml
+        with_items: "{{ volume_group.logical_volumes }}"
+        loop_control:
+            loop_var: logical_volume

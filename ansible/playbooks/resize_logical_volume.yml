@@ -1,101 +1,108 @@
 ---
-- name: Resize logical volume
-  hosts: "{{host}}"
-  become: true
-  tasks:
-      # - name: Ensure filesystems management tools are installed
-      #   ansible.builtin.package:
-      #       name: "{{ item }}"
-      #       state: present
-      #   with_items:
-      #       - e2fsprogs
-      #       - xfsprogs
-      #       - f2fs-tools
-      #       - btrfs-progs
-      #       - reiserfsprogs
-      #       - lvm2
+# - name: Resize logical volume
+#   hosts: "{{host}}"
+#   become: true
+#   tasks:
+# - name: Ensure filesystems management tools are installed
+#   ansible.builtin.package:
+#       name: "{{ item }}"
+#       state: present
+#   with_items:
+#       - e2fsprogs
+#       - xfsprogs
+#       - f2fs-tools
+#       - btrfs-progs
+#       - reiserfsprogs
+#       - lvm2
 
-      - name: Unmount the logical volume [{{ logical_volume.lv_name }}]
-        ansible.posix.mount:
-            path: "{{ logical_volume.mountpoint }}"
-            state: unmounted
-        when: logical_volume.file_system_type != "btrfs"
+- name: Unmount the logical volume [{{ logical_volume.lv_name }}]
+  ansible.posix.mount:
+      path: "{{ logical_volume.mountpoint }}"
+      state: unmounted
+  when: logical_volume.file_system_type != "btrfs"
 
-      - name: Check the file system (ext2, ext3, ext4) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: e2fsck -y "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-        ignore_errors: true
-        register: e2fsck_result
-        when: logical_volume.file_system_type == 'ext2' or logical_volume.file_system_type == 'ext3' or logical_volume.file_system_type == 'ext4'
+- name: Check the file system (ext2, ext3, ext4) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: e2fsck -fy "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+  ignore_errors: true
+  register: e2fsck_result
+  when: logical_volume.file_system_type == 'ext2' or logical_volume.file_system_type == 'ext3' or logical_volume.file_system_type == 'ext4'
 
-      - name: Check the file system (xfs) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: xfs_fsr -fy "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-        ignore_errors: true
-        when: logical_volume.file_system_type == 'xfs'
+- name: Check the file system (xfs) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: xfs_fsr -fy "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+  ignore_errors: true
+  when: logical_volume.file_system_type == 'xfs'
 
-      - name: Check the file system (vfat) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: fsck.vfat -a /dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}
-        ignore_errors: true
-        when: logical_volume.file_system_type == 'vfat'
+- name: Check the file system (vfat) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: fsck.vfat -a /dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}
+  ignore_errors: true
+  when: logical_volume.file_system_type == 'vfat'
 
-      - name: Check the file system (btrfs) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: btrfs check --force "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-        ignore_errors: true
-        when: logical_volume.file_system_type == 'btrfs'
+- name: Check the file system (btrfs) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: btrfs check --force "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+  ignore_errors: true
+  when: logical_volume.file_system_type == 'btrfs'
 
-      - name: Check the file system (f2fs) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: fsck.f2fs -a "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-        ignore_errors: true
-        when: logical_volume.file_system_type == 'f2fs'
+- name: Check the file system (f2fs) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: fsck.f2fs -a "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+  ignore_errors: true
+  when: logical_volume.file_system_type == 'f2fs'
 
-      - name: Check the file system (reiserfs) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: fsck.reiserfs -y "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-        ignore_errors: true
-        when: logical_volume.file_system_type == 'reiserfs'
+- name: Check the file system (reiserfs) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: fsck.reiserfs -y "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+  ignore_errors: true
+  when: logical_volume.file_system_type == 'reiserfs'
 
-      - name: Check the file system (ufs) [{{ logical_volume.lv_name }}]
-        ansible.builtin.command: fsck.ufs -f "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-        ignore_errors: true
-        when: logical_volume.file_system_type == 'ufs'
+- name: Check the file system (ufs) [{{ logical_volume.lv_name }}]
+  ansible.builtin.command: fsck.ufs -f "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+  ignore_errors: true
+  when: logical_volume.file_system_type == 'ufs'
 
-      - name: Resize the logical volume ("{{logical_volume.file_system_type}}") [{{ logical_volume.lv_name }}]
-        community.general.lvol:
-            vg: "{{ logical_volume.vg_name }}"
-            lv: "{{ logical_volume.lv_name }}"
-            size: "{{ logical_volume.size }}"
-            force: true
-        ignore_errors: true
-        when: logical_volume.file_system_type not in ["ext2", "ext3", "ext4", "xfs"]
+- name: Resize the logical volume ("{{logical_volume.file_system_type}}") [{{ logical_volume.lv_name }}]
+  community.general.lvol:
+      vg: "{{ logical_volume.vg_name }}"
+      lv: "{{ logical_volume.lv_name }}"
+      size: "{{ logical_volume.size }}"
+      force: true
+  ignore_errors: true
+  when: logical_volume.file_system_type not in ["ext2", "ext3", "ext4", "xfs"]
 
-      - name: Resize the logical volume and the filesystem ("{{logical_volume.file_system_type}}") [{{ logical_volume.lv_name }}]
-        community.general.lvol:
-            vg: "{{ logical_volume.vg_name }}"
-            lv: "{{ logical_volume.lv_name }}"
-            size: "{{ logical_volume.size }}"
-            resizefs: true
-            force: true
-        ignore_errors: true
-        when: logical_volume.file_system_type in ["ext2", "ext3", "ext4", "xfs"]
+- name: Resize the logical volume and the filesystem ("{{logical_volume.file_system_type}}") [{{ logical_volume.lv_name }}]
+  community.general.lvol:
+      vg: "{{ logical_volume.vg_name }}"
+      lv: "{{ logical_volume.lv_name }}"
+      size: "{{ logical_volume.size }}"
+      resizefs: true
+      force: true
+  register: lvol_result
+  ignore_errors: true
+  when: logical_volume.file_system_type in ["ext2", "ext3", "ext4", "xfs"]
 
-      - name: Resize the file system ("{{ logical_volume.file_system_type }}") [{{ logical_volume.lv_name }}]
-        community.general.filesystem:
-            dev: "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-            fstype: "{{ logical_volume.file_system_type }}"
-            resizefs: true
-            force: true
-            state: present
-        ignore_errors: true
-        when: logical_volume.file_system_type in ["btrfs", "ext4dev", "f2fs", "vfat"]
+- name: Resize the file system ("{{ logical_volume.file_system_type }}") [{{ logical_volume.lv_name }}]
+  community.general.filesystem:
+      dev: "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+      fstype: "{{ logical_volume.file_system_type }}"
+      resizefs: true
+      force: true
+      state: present
+  ignore_errors: true
+  when: logical_volume.file_system_type in ["ext4dev", "f2fs", "vfat"]
 
-      - name: Ensure mountpoint exists [{{ logical_volume.lv_name }}]
-        ansible.builtin.file:
-            path: "{{ logical_volume.mountpoint }}"
-            state: directory
-        ignore_errors: true
+# FIXME: btrfs resize is not working
+# - name: Resize the file system ("{{ logical_volume.file_system_type }}") [{{ logical_volume.lv_name }}]
+#   ansible.builtin.command: btrfs filesystem resize max "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+#   ignore_errors: true
+#   when: logical_volume.file_system_type == "btrfs"
 
-      - name: Mount the logical volume [{{ logical_volume.lv_name }}]
-        ansible.posix.mount:
-            src: "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
-            path: "{{ logical_volume.mountpoint }}"
-            fstype: "{{ logical_volume.file_system_type }}"
-            state: mounted
-        ignore_errors: true
+- name: Ensure mountpoint exists [{{ logical_volume.lv_name }}]
+  ansible.builtin.file:
+      path: "{{ logical_volume.mountpoint }}"
+      state: directory
+  ignore_errors: true
+
+- name: Mount the logical volume [{{ logical_volume.lv_name }}]
+  ansible.posix.mount:
+      src: "/dev/mapper/{{ logical_volume.vg_name }}-{{ logical_volume.lv_name }}"
+      path: "{{ logical_volume.mountpoint }}"
+      fstype: "{{ logical_volume.file_system_type }}"
+      state: mounted
+  ignore_errors: true
