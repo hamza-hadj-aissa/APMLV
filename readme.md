@@ -9,18 +9,18 @@
 
 ## Table of Contents
 
--   [Project Prerequisites](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#prerequisites)
--   [Installation](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#installation)
--   [Configuration](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#configuration)
-    -   [Ansible configuration](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#ansible-configuration)
--   [Project overview](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#project-overview)
-    -   [Automated Prediction and Management of Logical Volumes using LSTM Recurrent Networks](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#automated-prediction-and-management-of-logical-volumes-using-lstm-recurrent-networks)
-    -   [Model usage](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#model-usage)
-    -   [Training the model](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#training-the-model)
-    -   [Database schema](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#database-schema)
-    -   [Supported filesystems](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#supported-filesystems)
--   [Workflow](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#workflow)
--   [Logging](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#logging)
+-   [Project Prerequisites](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#prerequisites)
+-   [Installation](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#installation)
+-   [Configuration](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#configuration)
+    -   [Ansible configuration](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#ansible-configuration)
+-   [Project overview](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#project-overview)
+    -   [Automated Prediction and Management of Logical Volumes using LSTM Recurrent Networks](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#automated-prediction-and-management-of-logical-volumes-using-lstm-recurrent-networks)
+    -   [Model usage](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#model-usage)
+    -   [Training the model](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#training-the-model)
+    -   [Database schema](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#database-schema)
+    -   [Supported filesystems](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#supported-filesystems)
+-   [Workflow](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#workflow)
+-   [Logging](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#logging)
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Before running the project, make sure the following software and dependencies ar
 **1** - Clone this repository to your machine by running
 
 ```bash
-git clone https://github.com/hamza-hadj-aissa/lvm_balancer.git
+git clone https://github.com/hamza-hadj-aissa/APMLV.git
 ```
 
 **2** - Set Up a Virtual Environment
@@ -66,7 +66,7 @@ cp .env.sample .env
 HOST_NAME = "localhost"
 HOST_IP = "127.0.0.1"
 
-DB_NAME = "lvm_balancer"
+DB_NAME = "APMLV"
 DB_PORT = 5432
 DB_USER = "your_database_user"
 DB_PASSWORD = "your_database_password"
@@ -106,7 +106,7 @@ ansible -i ansible/inventory.ini vm_group -m ping
 
 #### Overview
 
-In the context of lvm_balancer, the prediction of logical volumes (LV) usage is crucial for proactive management and optimization of storage resources. Traditional methods might fall short in capturing the dynamic and non-linear patterns of storage usage. To address this, we employ LSTM (Long Short-Term Memory) Recurrent Networks, a type of deep learning architecture known for its capability to model sequences and time-series data.
+In the context of 'APMLV', the prediction of logical volumes (LV) usage is crucial for proactive management and optimization of storage resources. Traditional methods might fall short in capturing the dynamic and non-linear patterns of storage usage. To address this, we employ LSTM (Long Short-Term Memory) Recurrent Networks, a type of deep learning architecture known for its capability to model sequences and time-series data.
 
 #### How LSTM Recurrent Networks Work
 
@@ -128,7 +128,7 @@ LSTM networks are a special kind of Recurrent Neural Network (RNN) that can lear
 
 ### Model usage
 
-The LSTM-based prediction model in lvm_balancer leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
+The LSTM-based prediction model in 'APMLV' leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
 
 #### Decision-making Process
 
@@ -143,7 +143,7 @@ The allocation of logical volumes is determined through a multi-step process:
 
 ### Training the model
 
-Each logical volume is associated with its own trained LSTM model, enabling tailored predictions and proactive storage management. This individualized approach allows lvm_balancer to account for unique usage patterns, trends, and requirements specific to each logical volume
+Each logical volume is associated with its own trained LSTM model, enabling tailored predictions and proactive storage management. This individualized approach allows 'APMLV' to account for unique usage patterns, trends, and requirements specific to each logical volume
 
 #### Data Preparation:
 
@@ -166,7 +166,7 @@ python prediction/lstm.py
 ---
 
 \
-After training the LSTM models for individual logical volumes, lvm_balancer generates key artifacts:
+After training the LSTM models for individual logical volumes, 'APMLV' generates key artifacts:
 
 #### Data Plot:
 
@@ -183,21 +183,21 @@ After training the LSTM models for individual logical volumes, lvm_balancer gene
 -   **Format:** MinMaxScaler parameters.
 -   **Usage:** Consistent data scaling in future predictions.
 <div align="center">
-  <img alt="Training Results: Plot of a portion of trained and tested data (actual and predicted)" src="https://github.com/hamza-hadj-aissa/lvm_balancer/blob/main/prediction/dummy/figures/model_7fedf800-2af3-40bd-b836-6393fe5e1241.png" width=900/>
+  <img alt="Training Results: Plot of a portion of trained and tested data (actual and predicted)" src="https://github.com/hamza-hadj-aissa/APMLV/blob/main/prediction/dummy/figures/model_7fedf800-2af3-40bd-b836-6393fe5e1241.png" width=900/>
   <p>Training Results: Plot of a portion of trained and tested data (actual and predicted)</p>
 </div>
 
 ### Database Schema
 
 Overview
-The lvm_balancer system relies on an SQL database to store and manage the status and metrics of logical volumes. Understanding the database schema is essential for ensuring efficient data storage, retrieval, and analysis within the system.
+The 'APMLV' system relies on an SQL database to store and manage the status and metrics of logical volumes. Understanding the database schema is essential for ensuring efficient data storage, retrieval, and analysis within the system.
 
 #### Schema Description
 
 Below is a high-level overview of the database schema:
 
 <div align="center">
-  <img alt="Database schema" src="https://github.com/hamza-hadj-aissa/lvm_balancer/blob/main/database/schema.png" width=900/>
+  <img alt="Database schema" src="https://github.com/hamza-hadj-aissa/APMLV/blob/main/database/schema.png" width=900/>
   <p>Database schema</p>
 </div>
 ## Usage
@@ -206,7 +206,7 @@ Run the main script to start scraping LVM statistics and storing them in the dat
 
 ## Supported Filesystems
 
-The `lvm_balancer` system supports the following filesystems for logical volumes:
+The `APMLV` system supports the following filesystems for logical volumes:
 
 -   ext2
 -   ext3
@@ -220,7 +220,7 @@ When using the system, ensure that your logical volumes are formatted with one o
 
 ## Workflow
 
-The lvm_balancer system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the system begins scraping information from the logical volumes within the system at regular intervals. This data collection occurs every 10 minutes, allowing the system to continually monitor and analyze storage usage patterns.
+The 'APMLV' system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the system begins scraping information from the logical volumes within the system at regular intervals. This data collection occurs every 10 minutes, allowing the system to continually monitor and analyze storage usage patterns.
 
 After collecting data for six consecutive intervals (equivalent to one hour), the system leverages the trained models to perform optimized allocations for each logical volume. This proactive approach ensures timely adjustments and resource allocations, aligning with the predicted storage demands and enhancing overall system performance.
 
@@ -231,6 +231,4 @@ Logs are categorized into three types:
 -   Postgres (database-related)
 -   LVM (LVM related commands)
 -   Ansible (Ansible playbooks)
--   Main (main script logs)
-
-You can find log messages in the console and adjust logging settings in the logs/Logger.py file.
+-   Main (Main script logs)
