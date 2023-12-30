@@ -1,9 +1,24 @@
+from sqlalchemy import create_engine
+from database.connect import DB_NAME, DB_PASSWORD, DB_PORT, DB_USER, HOSTNAME
+from database.models import Base
 
 
-from database.connect import connect_to_database, create_tables, drop_tables
-from logs.Logger import Logger
+def drop_tables(engine):
+    # Drop tables
+    Base.metadata.drop_all(engine)
+    print("Tables dropped")
 
-db_logger = Logger("Postgres")
-engine = connect_to_database(logger=db_logger)
-drop_tables(engine, db_logger)
-create_tables(engine, db_logger)
+
+def create_tables(engine):
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+    print("Tables created")
+
+
+if __name__ == "__main__":
+    # Create an engine
+    engine = create_engine(
+        f"postgresql+psycopg://{DB_USER}:{DB_PASSWORD}@{HOSTNAME}:{DB_PORT}/{DB_NAME}")
+
+    drop_tables(engine)
+    create_tables(engine)

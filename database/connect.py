@@ -30,14 +30,3 @@ def connect_to_database(logger: Logger):
         return engine
     except SQLAlchemyError as e:
         raise e
-
-
-def drop_tables(engine, logger: Logger):
-    Base.metadata.drop_all(engine)
-    logger.get_logger().info("Tables dropped")
-
-
-def create_tables(engine, logger: Logger):
-    # Create tables
-    Base.metadata.create_all(bind=engine)
-    logger.get_logger().info("Tables created")
