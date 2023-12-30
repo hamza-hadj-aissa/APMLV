@@ -106,7 +106,7 @@ ansible -i ansible/inventory.ini vm_group -m ping
 
 #### Overview
 
-In the context of 'APMLV', the prediction of logical volumes (LV) usage is crucial for proactive management and optimization of storage resources. Traditional methods might fall short in capturing the dynamic and non-linear patterns of storage usage. To address this, we employ LSTM (Long Short-Term Memory) Recurrent Networks, a type of deep learning architecture known for its capability to model sequences and time-series data.
+In the context of `APMLV`, the prediction of logical volumes (LV) usage is crucial for proactive management and optimization of storage resources. Traditional methods might fall short in capturing the dynamic and non-linear patterns of storage usage. To address this, we employ LSTM (Long Short-Term Memory) Recurrent Networks, a type of deep learning architecture known for its capability to model sequences and time-series data.
 
 #### How LSTM Recurrent Networks Work
 
@@ -128,7 +128,7 @@ LSTM networks are a special kind of Recurrent Neural Network (RNN) that can lear
 
 ### Model usage
 
-The LSTM-based prediction model in 'APMLV' leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
+The LSTM-based prediction model in `APMLV` leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
 
 #### Decision-making Process
 
@@ -143,7 +143,7 @@ The allocation of logical volumes is determined through a multi-step process:
 
 ### Training the model
 
-Each logical volume is associated with its own trained LSTM model, enabling tailored predictions and proactive storage management. This individualized approach allows 'APMLV' to account for unique usage patterns, trends, and requirements specific to each logical volume
+Each logical volume is associated with its own trained LSTM model, enabling tailored predictions and proactive storage management. This individualized approach allows `APMLV` to account for unique usage patterns, trends, and requirements specific to each logical volume
 
 #### Data Preparation:
 
@@ -166,7 +166,7 @@ python prediction/lstm.py
 ---
 
 \
-After training the LSTM models for individual logical volumes, 'APMLV' generates key artifacts:
+After training the LSTM models for individual logical volumes, `APMLV` generates key artifacts:
 
 #### Data Plot:
 
@@ -191,7 +191,7 @@ After training the LSTM models for individual logical volumes, 'APMLV' generates
 
 #### Overview
 
-The 'APMLV' system relies on an SQL database to store and manage the status and metrics of logical volumes. Understanding the database schema is essential for ensuring efficient data storage, retrieval, and analysis within the system.
+The `APMLV` system relies on an SQL database to store and manage the status and metrics of logical volumes. Understanding the database schema is essential for ensuring efficient data storage, retrieval, and analysis within the system.
 
 #### Schema Description
 
@@ -218,7 +218,7 @@ When using the system, ensure that your logical volumes are formatted with one o
 
 ## Workflow
 
-The 'APMLV' system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the process of predictive storage managments begins for each volume group on each host:
+The `APMLV` system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the process of predictive storage managments begins for each volume group on each host:
 
 -   1 - **Data Collection:** The system gathers data from the volume groups at consistent intervals.
 -   2 - **Data Processing:** Collected data undergoes analysis to ascertain storage patterns and usage trends.
