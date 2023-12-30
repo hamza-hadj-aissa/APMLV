@@ -189,7 +189,8 @@ After training the LSTM models for individual logical volumes, 'APMLV' generates
 
 ### Database Schema
 
-Overview
+#### Overview
+
 The 'APMLV' system relies on an SQL database to store and manage the status and metrics of logical volumes. Understanding the database schema is essential for ensuring efficient data storage, retrieval, and analysis within the system.
 
 #### Schema Description
@@ -200,9 +201,6 @@ Below is a high-level overview of the database schema:
   <img alt="Database schema" src="https://github.com/hamza-hadj-aissa/APMLV/blob/main/database/schema.png" width=900/>
   <p>Database schema</p>
 </div>
-## Usage
-
-Run the main script to start scraping LVM statistics and storing them in the database:
 
 ## Supported Filesystems
 
@@ -212,17 +210,22 @@ The `APMLV` system supports the following filesystems for logical volumes:
 -   ext3
 -   ext4
 -   vfat
--   btrfs
+-   btrfs (experimental)
 -   f2fs
--   xfs
+-   xfs (experimental)
 
 When using the system, ensure that your logical volumes are formatted with one of the listed filesystems to guarantee compatibility and accurate storage management.
 
 ## Workflow
 
-The 'APMLV' system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the system begins scraping information from the logical volumes within the system at regular intervals. This data collection occurs every 10 minutes, allowing the system to continually monitor and analyze storage usage patterns.
+The 'APMLV' system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the process of predictive storage managments begins for each volume group on each host:
 
-After collecting data for six consecutive intervals (equivalent to one hour), the system leverages the trained models to perform optimized allocations for each logical volume. This proactive approach ensures timely adjustments and resource allocations, aligning with the predicted storage demands and enhancing overall system performance.
+-   1 **Data Collection:** The system gathers data from the volume groups at consistent intervals.
+-   2 **Data Processing:** Collected data undergoes analysis to ascertain storage patterns and usage trends.
+-   3 **Threshold Monitoring:** Immediate adjustments are triggered if any logical volume within a group exceeds its usage threshold within a 6 \* 10-minute timeframe.
+-   4 **Predictive Analysis:** Using LSTM Recurrent Networks, predictive models are applied to anticipate future volume requirements.
+-   5 **Allocation Volume Computation:** The system computes the allocation volume for each logical volume, considering predicted usage, historical proportion, priority factor, and demand-to-space ratio.
+-   6 **Adjustments Execution:** Once adjustments are made, the time tracking resets, nitiating another monitoring cycle lasting 6 \* 10 minutes.
 
 ## Logs
 
