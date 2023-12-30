@@ -40,7 +40,7 @@ def adjust_logical_volume(ansible_logger: Logger, hostname: str, volume_group: d
                 message=f"Failed to connect to host ({hostname}). Check your SSH connection or host settings.")
 
         ansible_logger.get_logger().info(
-            f"Extraction of lvm informations from ({hostname}) completed.")
+            f"Adjustments executed successfully on ({hostname})")
         # Parse the output and extract the informations
         for each_host_event in r.events:
             # Check if the event is a runner_on_ok or runner_on_failed
