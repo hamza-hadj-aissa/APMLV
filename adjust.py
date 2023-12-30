@@ -43,10 +43,9 @@ def adjust(ansible_logger: Logger, db_logger: Logger, adjustments_ids: list[int]
         .join(Host)\
         .order_by(Adjustment.created_at.desc())\
         .all()
-    print(rows)
-    print([row.id for row in rows])
     if len(rows) == 0:
-        print("No adjustments to execute")
+        ansible_logger.get_logger().info(
+            "No adjustments to be executed at this time")
         return
     else:
         adjustments = []
@@ -75,7 +74,6 @@ def adjust(ansible_logger: Logger, db_logger: Logger, adjustments_ids: list[int]
             session.add(row)
         # Commit the changes to the database
         session.commit()
-        print(adjustments)
         # Add the adjustments to the volume group dictionary
         volume_group["logical_volumes"] = adjustments
         # Execute the adjustments
