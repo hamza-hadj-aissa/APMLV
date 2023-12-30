@@ -1,16 +1,22 @@
 {
     "hosts": [
         {
-            "hostname": "bob@192.168.1.76",
+            "hostname": "bob@192.168.1.88",
             "volume_groups": [
                 {
                     "vg_name": "vg1",
                     "logical_volumes": [
                         {
-                            "lv_name": "lv1"
+                            "lv_name": "lv1",
+                            "priority": 1
                         },
                         {
-                            "lv_name": "lv2"
+                            "lv_name": "lv2",
+                            "priority": 2
+                        },
+                        {
+                            "lv_name": "lv3",
+                            "priority": 3
                         }
                     ],
                     "physical_volumes": [
@@ -23,13 +29,65 @@
                     "vg_name": "vg2",
                     "logical_volumes": [
                         {
-                            "lv_name": "lv3"
+                            "lv_name": "lv5",
+                            "priority": 5
                         },
                         {
-                            "lv_name": "lv4"
+                            "lv_name": "lv6",
+                            "priority": 6
                         },
                         {
-                            "lv_name": "lv5"
+                            "lv_name": "lv7",
+                            "priority": 7
+                        }
+                    ],
+                    "physical_volumes": [
+                        {
+                            "pv_name": "/dev/sdb2"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "hostname": "bob@192.168.1.91",
+            "volume_groups": [
+                {
+                    "vg_name": "vg1",
+                    "logical_volumes": [
+                        {
+                            "lv_name": "lv1",
+                            "priority": 1
+                        },
+                        {
+                            "lv_name": "lv2",
+                            "priority": 2
+                        },
+                        {
+                            "lv_name": "lv3",
+                            "priority": 3
+                        }
+                    ],
+                    "physical_volumes": [
+                        {
+                            "pv_name": "/dev/sdb1"
+                        }
+                    ]
+                },
+                {
+                    "vg_name": "vg2",
+                    "logical_volumes": [
+                        {
+                            "lv_name": "lv5",
+                            "priority": 5
+                        },
+                        {
+                            "lv_name": "lv6",
+                            "priority": 6
+                        },
+                        {
+                            "lv_name": "lv7",
+                            "priority": 7
                         }
                     ],
                     "physical_volumes": [
