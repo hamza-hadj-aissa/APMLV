@@ -14,7 +14,7 @@
 -   [Configuration](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#configuration)
     -   [Ansible configuration](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#ansible-configuration)
 -   [Project overview](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#project-overview)
-    -   [Automated Prediction and Management of Logical Volumes using LSTM Recurrent Networks](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#automated-prediction-and-management-of-logical-volume-using-lstm-recurrent-networks)
+    -   [Automated Prediction and Management of Logical Volumes using LSTM Recurrent Networks](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#automated-prediction-and-management-of-logical-volumes-using-lstm-recurrent-networks)
     -   [Model usage](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#model-usage)
     -   [Training the model](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#training-the-model)
     -   [Database schema](https://github.com/hamza-hadj-aissa/lvm_balancer/tree/main?tab=readme-ov-file#database-schema)
