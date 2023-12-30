@@ -1,8 +1,9 @@
-from joblib import Logger
+from math import ceil
 import numpy as np
 import torch
 
 from helpers import load_model, load_scaler, reverse_transform
+from logs.Logger import Logger
 from prediction.lstm import LOOKBACK
 
 
@@ -23,9 +24,11 @@ def check_logical_volume_usage_thresholds(lvm_logger: Logger, logical_volume: li
         f"Checking usage threshold for {logical_volume['lv_name']}..."
     )
     # logical volume current usage percentage
-    current_used_volume_percentage = usage_serie[-1] * \
-        100 / file_system_size
-    print("Pourcentage", current_used_volume_percentage)
+    current_used_volume_percentage = int(ceil(usage_serie[-1] *
+                                              100 / file_system_size))
+    lvm_logger.get_logger().info(
+        f"Current usage percentage for {logical_volume['lv_name']}: {current_used_volume_percentage}%"
+    )
     if current_used_volume_percentage > 80:
         run_calculations = True
         # give the logical volume a superieur priority
