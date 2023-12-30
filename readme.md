@@ -220,12 +220,12 @@ When using the system, ensure that your logical volumes are formatted with one o
 
 The 'APMLV' system operates through a structured workflow to ensure efficient storage management. Once a model is trained for each logical volume using LSTM Recurrent Networks, the process of predictive storage managments begins for each volume group on each host:
 
--   1 **Data Collection:** The system gathers data from the volume groups at consistent intervals.
--   2 **Data Processing:** Collected data undergoes analysis to ascertain storage patterns and usage trends.
--   3 **Threshold Monitoring:** Immediate adjustments are triggered if any logical volume within a group exceeds its usage threshold within a 6 \* 10-minute timeframe.
--   4 **Predictive Analysis:** Using LSTM Recurrent Networks, predictive models are applied to anticipate future volume requirements.
--   5 **Allocation Volume Computation:** The system computes the allocation volume for each logical volume, considering predicted usage, historical proportion, priority factor, and demand-to-space ratio.
--   6 **Adjustments Execution:** Once adjustments are made, the time tracking resets, nitiating another monitoring cycle lasting 6 \* 10 minutes.
+-   1 - **Data Collection:** The system gathers data from the volume groups at consistent intervals.
+-   2 - **Data Processing:** Collected data undergoes analysis to ascertain storage patterns and usage trends.
+-   3 - **Threshold Monitoring:** Immediate adjustments are triggered if any logical volume within a group exceeds its usage threshold within a 6 \* 10-minute timeframe.
+-   4 - **Predictive Analysis:** Using LSTM Recurrent Networks, predictive models are applied to anticipate future volume requirements.
+-   5 - **Allocation Volume Computation:** The system computes the allocation volume for each logical volume, considering predicted usage, historical proportion, priority factor, and demand-to-space ratio.
+-   6 - **Adjustments Execution:** Once adjustments are made, the time tracking resets, nitiating another monitoring cycle lasting 6 \* 10 minutes.
 
 ## Logs
 
