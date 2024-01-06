@@ -319,7 +319,7 @@ Logs are categorized into three types:
 -   Main (Main script logs)
 
 ## Future improvements:
-*    Multi-threaded Processing:
+*    **Multi-threaded Processing:**
      +    **Description:** Implementing threads to assign each volume group to a separate thread can significantly speed up the processing time by allowing parallel execution of tasks.
      +    **Benefits:** Improved efficiency and reduced processing time
 *    **Volume group size adjustments:**
