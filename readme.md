@@ -249,11 +249,21 @@ Finally, the allocation/reclaim of a logical volume is determined by comparing t
 <div align="center">
     <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}Adjustment=Max(AR,ARSAF)" title="Adjustment=Max(AR,ARSAF)" />
 </div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where : <br/>
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\dpi{120}\bg{white}&space;ARSAF=(20%of&space;Prediction\times&space;MP\times&space;Allocation&space;Factor)&plus;20%of&space;Prediction" title=" ARSAF=(20%of Prediction\times MP\times Allocation Factor)+20%of Prediction" />
+</div>
 
  *    *    *    For a positive allocation/reclaim size :
 <div align="center">
     <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}Adjustment=Min(AR,ARSAF)" title="Adjustment=Min(AR,ARSAF)" />
 </div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where :<br/>
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{120}\bg{white}&space;ARSAF=(AR\times&space;MP\times&space;Allocation&space;Factor)&plus;20%of&space;Prediction" title=" ARSAF=(AR \times MP\times Allocation Factor)+20%of Prediction" />
+</div>
+
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where :<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AR : Represents for Allocation/Reclaim size<br/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ARSAF : Represents for Allocation/Reclaim size scaled by the allocation factor<br/>
