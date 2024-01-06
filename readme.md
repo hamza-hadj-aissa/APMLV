@@ -21,6 +21,7 @@
     -   [Supported filesystems](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#supported-filesystems)
 -   [Workflow](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#workflow)
 -   [Logging](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#logging)
+-   [Future improvements](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#future-improvements)
 
 ## Prerequisites
 
