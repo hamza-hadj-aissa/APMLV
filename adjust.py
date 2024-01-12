@@ -72,6 +72,8 @@ def adjust(ansible_logger: Logger, db_logger: Logger, adjustments_ids: list[int]
             adjustments.append(logical_volume_dict)
             # Add the adjustment to the database
             session.add(row)
+            ansible_logger.get_logger().info(
+                f"Making adjustments on ({hostname}/{vg_name}/{lv_name}): {size} MiB")
         # Commit the changes to the database
         session.commit()
         # Add the adjustments to the volume group dictionary
