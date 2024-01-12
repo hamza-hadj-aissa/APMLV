@@ -1,11 +1,9 @@
-import json
 from adjust import adjust
 from calculations import calculate_allocations_volumes, check_logical_volume_usage_thresholds, predict_logical_volume_future_usage
 from Counter import Counter
 from database.utils import get_logical_volumes_list_per_volume_group_per_host, insert_to_logical_volume_adjustment
 from logs.Logger import Logger
 from prediction.lstm import LOOKBACK
-from root_directory import root_directory
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -67,7 +65,7 @@ def process(session: Session, lvm_logger: Logger, db_logger: Logger, ansible_log
 
         # Reset the counter to collect new data for another LOOKBACK intervals (10 Minutes * LOOKBACK)
         lvm_logger.get_logger().info(
-            f"Resetting the counter to collect new data for another {LOOKBACK} intervals (10 Minutes x {LOOKBACK})"
+            f"Resetting the counter for {hostname}/{volume_group['vg_name']} to collect new data for another {LOOKBACK} intervals (10 Minutes x {LOOKBACK})"
         )
         counter.resetCounter()
     lvm_logger.get_logger().info(
