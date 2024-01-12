@@ -55,7 +55,7 @@ if __name__ == "__main__":
     # expressed in seconds
     # 60 * 5 = 5 minutes
     time_interval = 10 * 60
-    log_file_path = f"{root_directory}/logs/apmlv_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"
+    log_file_path = f"{root_directory}/logs/apmlv_{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}.log"
     # define loggers
     db_logger = Logger("Postgres", path=log_file_path)
     lvm_logger = Logger("LVM", path=log_file_path)
