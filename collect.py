@@ -1,4 +1,3 @@
-import json
 from ansible.extract import extract_lvm_informations_from_host
 from database.utils import insert_lvm_data_to_database, transform_lvm_data_to_dataframe
 from sqlalchemy.orm import Session
