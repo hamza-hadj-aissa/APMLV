@@ -1,7 +1,6 @@
 from math import ceil
 import numpy as np
 import torch
-
 from helpers import load_model, load_scaler, reverse_transform
 from logs.Logger import Logger
 from prediction.lstm import LOOKBACK
@@ -34,8 +33,8 @@ def check_logical_volume_usage_thresholds(lvm_logger: Logger, logical_volume: li
         # give the logical volume a superieur priority
         if logical_volume["priority"] > 1:
             logical_volume["priority"] = logical_volume["priority"] - 1
-            lvm_logger.get_logger().debug(
-                f"Giving more priority to {lv_uuid}: {logical_volume['priority']}"
+            lvm_logger.get_logger().info(
+                f"Giving more priority to {logical_volume['lv_name']}: {logical_volume['priority']}"
             )
 
     return logical_volume, run_calculations
@@ -168,7 +167,7 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
     logical_volumes_adjustments_sizes: list[dict[str, int]] = []
     for logical_volume_informations, prediction, twenty_percent_of_prediction, allocation_reclaim_size, mean_proportion in zip(logical_volumes_informations_list, predictions, twenty_percent_of_predictions, allocation_reclaim_sizes, mean_proportions):
         lvm_logger.get_logger().debug(
-            f"--------------------------------------------------------------------------------")
+            f"-----------------------------------------------  ({volume_group_informations['vg_name']}/{logical_volume_informations['lv_name']})  -----------------------------------------------")
         file_system_size = logical_volume_informations["file_system_size"]
         prediction_size = int(prediction)
         if allocation_reclaim_size < 0:
@@ -221,24 +220,33 @@ def calculate_allocations_volumes(lvm_logger: Logger, volume_group_informations:
         allocation_volume -= logical_volumes_adjustment_size
 
         lvm_logger.get_logger().debug(
-            f"File system size : {file_system_size} | "
-            f"Prediction: {prediction_size} | "
-            f"Future LV size: {logical_volume_future_size} | "
-            f"Adjustment size: {logical_volumes_adjustment_size} | "
-            f"Priority: {logical_volume_informations['priority']} | "
+            f"File system size : {file_system_size} MiB"
+        )
+        lvm_logger.get_logger().debug(
+            f"Prediction: {prediction_size} MiB"
+        )
+        lvm_logger.get_logger().debug(
+            f"Future LV size: {logical_volume_future_size} MiB"
+        )
+        lvm_logger.get_logger().debug(
+            f"Adjustment size: {logical_volumes_adjustment_size} MiB"
+        )
+        lvm_logger.get_logger().debug(
+            f"Priority: {logical_volume_informations['priority']}"
+        )
+        lvm_logger.get_logger().debug(
             f"Mean proportion: {mean_proportion}"
+        )
+        lvm_logger.get_logger().debug(
+            f"VG Free: {allocation_volume} MiB"
         )
         logical_volumes_adjustments_sizes.append(
             {"lv_uuid": logical_volume_informations["lv_uuid"],
                 "size": logical_volumes_adjustment_size}
         )
         lvm_logger.get_logger().debug(
-            f"Allocation volume size with max limited allocation of {allocation_volume} MiB: {logical_volumes_adjustment_size} MiB"
-        )
-        lvm_logger.get_logger().debug(
             "----------------------------------------------------------------------------------")
 
-    lvm_logger.get_logger().debug(f"Allocation volume: {allocation_volume}")
     lvm_logger.get_logger().debug(
         "----------------------------------------------------------------------------------")
     return logical_volumes_adjustments_sizes
