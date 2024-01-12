@@ -15,12 +15,13 @@
     -   [Ansible configuration](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#ansible-configuration)
 -   [Project overview](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#project-overview)
     -   [Automated Prediction and Management of Logical Volumes using LSTM Recurrent Networks](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#automated-prediction-and-management-of-logical-volumes-using-lstm-recurrent-networks)
-    -   [Model usage](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#model-usage)
     -   [Training the model](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#training-the-model)
+    -   [Model usage](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#model-usage)
     -   [Database schema](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#database-schema)
     -   [Supported filesystems](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#supported-filesystems)
 -   [Workflow](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#workflow)
 -   [Logging](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#logging)
+-   [Future improvements](https://github.com/hamza-hadj-aissa/APMLV/tree/main?tab=readme-ov-file#future-improvements)
 
 ## Prerequisites
 
@@ -126,20 +127,6 @@ LSTM networks are a special kind of Recurrent Neural Network (RNN) that can lear
 
 -   **Scalability:** The LSTM model can be scaled to handle larger datasets and adapt to evolving storage usage patterns. (_It's essential to approach scaling with caution to ensure proper handling of the model_ ). Related article: [Incremental Ensemble LSTM Model towards Time Series Data](https://www.sciencedirect.com/science/article/abs/pii/S0045790621001592)
 
-### Model usage
-
-The LSTM-based prediction model in `APMLV` leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
-
-#### Decision-making Process
-
-The allocation of logical volumes is determined through a multi-step process:
-
--   **Predicting Future Usage:** Utilizing LSTM Recurrent Networks, the system forecasts the future usage of each logical volume. This prediction serves as a baseline for understanding the expected growth or reduction in storage requirements.
-
--   **Historical Proportion Analysis:** To maintain balance and fairness within the volume group, the historical proportion of each logical volume's usage relative to its neighbors is calculated. This analysis ensures that no single logical volume disproportionately consumes resources, leading to potential bottlenecks or inefficiencies.
-
--   **Priority Factor Integration:** The priority factor is incorporated into the allocation factor calculation, assigning weights or rankings to logical volumes based on their priority levels. Logical volumes with higher priority factors receive preferential treatment in the allocation process.
--   **Demand-to-Space Ratio:** The calculation of the allocation factor is designed to ensure that the cumulative demands of all logical volumes are appropriately scaled relative to the available free space in the volume group. Thereby facilitating a balanced and efficient allocation strategy.
 
 ### Training the model
 
@@ -186,6 +173,101 @@ After training the LSTM models for individual logical volumes, `APMLV` generates
   <img alt="Training Results: Plot of a portion of trained and tested data (actual and predicted)" src="https://github.com/hamza-hadj-aissa/APMLV/blob/main/prediction/dummy/figures/model_7fedf800-2af3-40bd-b836-6393fe5e1241.png" width=900/>
   <p>Training Results: Plot of a portion of trained and tested data (actual and predicted)</p>
 </div>
+
+
+### Model usage
+
+The LSTM-based prediction model in `APMLV` leverages historical LV usage metrics to forecast future usage trends. By analyzing past data points, the model can provide insights into potential storage demands, enabling more informed decision-making and efficient resources allocation.
+
+#### Decision-making Process
+
+The allocation of logical volumes is determined through a multi-step process:
+
+-   **Predicting Future Usage:** Utilizing LSTM Recurrent Networks, the system forecasts the future usage of each logical volume. This prediction serves as a baseline for understanding the expected growth or reduction in storage requirements.
+
+-   **Historical Proportion Analysis:** To maintain balance and fairness within the volume group, the historical proportion of each logical volume's usage relative to its neighbors is calculated. This analysis ensures that no single logical volume disproportionately consumes resources, leading to potential bottlenecks or inefficiencies.<br/>
+        The ***MP*** ( i.e Mean Proportion ) for a logical volume over a period of time T is
+determined by the formula:
+<div align="center">
+    <div style="background-color: white; display: inline-block;">
+        <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}MP=\frac{1}{n}\times\sum_{t=1}^{T}{\frac{U_t}{\sum_{i=1}^{n}U_i_t}}" title="MP=\frac{1}{n}\times\sum_{t=1}^{T}{\frac{U_t}{\sum_{i=1}^{n}U_i_t}}" />
+    </div>
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where : <br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n: The number of logical volumes in the volume group.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;U<sub>t</sub>: The usage volume of a specific logical volume at time t.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;U<sub>it</sub>: The usage of the ith logical volume in the volume group at time t.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;T: The period of time during which the usage of a logical volume is collected and predictions are made based on that series of usages.<br/>
+
+
+-   **Priority Factor Integration:** The priority factor is incorporated into the allocation factor calculation, assigning weights or rankings to logical volumes based on their priority levels. Logical volumes with higher priority factors receive preferential treatment in the allocation process.<br/>
+The formula for the ***MPPF*** ( i.e Mean Proportion-to-Priority Factor ) is:
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}MPPF=\frac{MP}{Priority\times\frac{1}{Count(Priority)}" title="MPPF=\frac{Mean Proportion}{Priority\times\frac{1}{Count(Priority)}" />
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Priority : Numerical value representing the priority level of a logical volume.<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Count(Priority) : Function that counts the number of logical volumes with the same priority level.<br/>
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To scale the Mean Proportion-to-Priority Factor pi to ensure they sum up to 1, the scaled factor bi can be computed as:
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}S_i=\frac{L_i}{\sum_{j=1}^{n}L_j}" title="S_i=\frac{L_i}{\sum_{j=1}^{n}L_j}" />
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;n : The number of logical volumes in the volume group<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;L : A list of Mean Proportion-to-Priority Factors [p1,p2,...,pn]<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;S : Scaled Mean Proportion-to-Priority Factors [b1,b2,...,bn]<br/>
+-   **Demand-to-Space Ratio:** The calculation of the allocation factor is designed to ensure that the cumulative demands of all logical volumes are appropriately scaled relative to the available free space in the volume group. Thereby facilitating a balanced and efficient allocation strategy.<br/>
+To determine the free allocation space in the volume group, we calculate Allocation/Reclaim size for each logical volume by :
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}\begin{matrix}m_i\times&space;d_i&plus;p_i\\p_i\times&space;d_i&plus;p_i\end{matrix}\left\{\begin{matrix}d_i\geq&space;0\\d_i\;<0\end{matrix}\right." title="\begin{matrix}m_i\times d_i+p_i\\p_i\times d_i+p_i\end{matrix}\left\{\begin{matrix}d_i\geq 0\\d_i\;<0\end{matrix}\right." />
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;p<sub>i</sub> : 20% of the model’s prediction ( i.e 20% of free space )<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;d<sub>i</sub> : The difference between the prediction and the current filesystem size for each logical volume<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;m<sub>i</sub> : The scaled Mean Proportion-to-Priority Factor of the logical volume<br/>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Then, we sum up the results, ***TAR*** ( i.e Total Allocations/Reclaims ) :<br/>
+<div align="center">
+    <img src="https://latex.codecogs.com/png?\large&space;\dpi{150}\bg{white}TAR=\sum_{i=0}^{n}A_i&space;" title="TAR=\sum_{i=0}^{n}A_i " />
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Finally, The allocation factor is calculated by:<br/>
+<div align="center">
+    <img src="https://latex.codecogs.com/png?\large&space;\dpi{150}\bg{white}Allocation&space;Factor=\frac{Volume&space;group&space;free&space;space}{TAR}" title="Allocation Factor=\frac{Volume group free space}{TAR}" />
+</div>
+
+Finally, the allocation/reclaim of a logical volume is determined by comparing the allocation/reclaim size and the allocation/reclaim size scaled by the allocation factor, which are calculated as below:
+*    *    **Allocation/Reclaim Size Scaled by the Allocation Factor:** 
+  This metric introduces an additional layer of complexity by incorporating the allocation_factor. It can either magnify or reduce the initial allocation/reclaim size based on the value of the allocation_factor. 
+ It is calculated as below:<br/>
+ *    *    *    For a negative allocation/reclaim size :
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}Adjustment=Max(AR,ARSAF)" title="Adjustment=Max(AR,ARSAF)" />
+</div>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where : <br/>
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\dpi{120}\bg{white}&space;ARSAF=(20%of&space;Prediction\times&space;MP\times&space;Allocation&space;Factor)&plus;20%of&space;Prediction" title=" ARSAF=(20%of Prediction\times MP\times Allocation Factor)+20%of Prediction" />
+</div>
+
+ *    *    *    For a positive allocation/reclaim size :
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{150}\bg{white}Adjustment=Min(AR,ARSAF)" title="Adjustment=Min(AR,ARSAF)" />
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where :<br/>
+<div align="center">
+    <img src="https://latex.codecogs.com/png.image?\large&space;\dpi{120}\bg{white}&space;ARSAF=(AR\times&space;MP\times&space;Allocation&space;Factor)&plus;20%of&space;Prediction" title=" ARSAF=(AR \times MP\times Allocation Factor)+20%of Prediction" />
+</div>
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Where :<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;AR : Represents for Allocation/Reclaim size<br/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ARSAF : Represents for Allocation/Reclaim size scaled by the allocation factor<br/>
 
 ### Database Schema
 
@@ -235,3 +317,17 @@ Logs are categorized into three types:
 -   LVM (LVM related commands)
 -   Ansible (Ansible playbooks)
 -   Main (Main script logs)
+
+## Future improvements:
+*    **Multi-threaded Processing:**
+     +    **Description:** Implementing threads to assign each volume group to a separate thread can significantly speed up the processing time by allowing parallel execution of tasks.
+     +    **Benefits:** Improved efficiency and reduced processing time
+*    **Volume group size adjustments:**
+     +    **Description:** Expanding the model to incorporate adjustments for volume group sizes, enabling dynamic resizing based on workload requirements and resource availability.
+     +    **Benefits:** Greater flexibility and adaptability to changing system demands.
+*    **Incremental Learning for LSTM Networks:**
+     +    **Description:** Implementing incremental learning techniques for LSTM (Long Short-Term Memory) networks, allowing the model to continuously learn from new data without retraining the entire model.
+     +    **Benefits:** Improved model accuracy over time, adaptability to evolving usage patterns, and reduced computational overhead for frequent updates.
+*    **User Interface for Monitoring & Visualization:**
+     +    **Description:** Developing a user-friendly interface that provides real-time monitoring and visualizations of logical volumes, allocation/reclaim metrics, and historical trends.
+     +    **Benefits:** Enhanced user experience, easier data interpretation, and quicker decision-making capabilities for administrators and users.
